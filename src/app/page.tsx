@@ -1,50 +1,43 @@
 "use client";
 
-import StoryPanel from "@/components/story-panel";
-import ChoicesPanel from "@/components/choices-panel";
-import PlayerStatus from "@/components/player-status";
-import Inventory from "@/components/inventory";
-
-import { useTambo } from "@tambo-ai/react";
+import { useState } from "react";
+import { useGameTambo } from "@/tambo/client";
+import { generateStory } from "@/tambo/tools";
 
 export default function Home() {
 
-  // 👉 This will later render AI components
-  const { render } = useTambo();
+  const { render } = useGameTambo();
+  const [started, setStarted] = useState(false);
 
+  async function startGame() {
+    setStarted(true);
+
+    // First turn (mock today)
+    await generateStory("start", {
+      health: 100,
+      mana: 50,
+      inventory: [],
+      location: "cell",
+    });
+  }
+
+  if (!started) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <button
+          onClick={startGame}
+          className="border-4 border-white p-6 text-white hover:bg-white hover:text-black"
+        >
+          START PLAYDUNGEON
+        </button>
+      </div>
+    );
+  }
+
+  // 👉 Tambo will render components here
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 font-mono">
-
-      <div className="border-4 border-white mb-8 p-6 bg-black">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-widest mb-2">
-          PLAY
-          <br />
-          DUNGEON
-        </h1>
-        <p className="text-xs tracking-widest">
-          :: NEO-BRUTALIST ADVENTURE ::
-        </p>
-      </div>
-
-      {/* For now we keep static UI */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 space-y-6">
-          <StoryPanel />
-          <ChoicesPanel />
-        </div>
-
-        <div className="space-y-6">
-          <PlayerStatus />
-          <Inventory />
-        </div>
-      </div>
-
-      <div className="border-4 border-white p-4">
-        <p className="text-xs tracking-widest text-center">
-          DUNGEON FLOOR 1 | LOCATION: UNKNOWN | TIME: 00:00
-        </p>
-      </div>
-
+    <div className="min-h-screen bg-black text-white p-4 md:p-8">
+      {render()}
     </div>
   );
 }
