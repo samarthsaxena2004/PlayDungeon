@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Typewriter from "@/components/Typewriter";
+import VoiceInput from "@/components/VoiceInput";
+import { useClickSound } from "@/components/useClickSound";
 
 type GameState = {
   health: number;
@@ -20,6 +22,9 @@ export default function Home() {
     inventory: [],
     location: "cell",
   });
+
+  // 👉 HERE is that line you were confused about
+  const playClick = useClickSound();
 
   // ─── DAMAGE SHAKE STATE ─────────────────────
   const [hurt, setHurt] = useState(false);
@@ -51,11 +56,13 @@ export default function Home() {
   }
 
   async function startGame() {
+    playClick();
     setStarted(true);
     await callAI("start");
   }
 
   async function choose(id: string) {
+    playClick();
     await callAI(id);
   }
 
@@ -64,7 +71,11 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-black">
         <button
           onClick={startGame}
-          className="border-4 border-white p-6 text-white hover:bg-white hover:text-black"
+          className="
+            border-4 border-white p-6 text-white
+            hover:bg-white hover:text-black
+            transition-all active:scale-[0.97]
+          "
         >
           START PLAYDUNGEON
         </button>
@@ -74,7 +85,11 @@ export default function Home() {
 
   return (
     // ─── ROOT WRAPPED WITH DAMAGE EFFECT ───────
-    <div className={`min-h-screen bg-black text-white p-4 md:p-8 ${hurt ? "damage" : ""}`}>
+    <div
+      className={`min-h-screen bg-black text-white p-4 md:p-8 ${
+        hurt ? "damage" : ""
+      }`}
+    >
       {/* STORY */}
       <div className="border-4 border-white p-6">
         <Typewriter text={story} />
@@ -91,11 +106,16 @@ export default function Home() {
               hover:bg-white hover:text-black
               transition-all duration-150
               active:scale-[0.98]
-              "
+            "
           >
             {c.text}
           </button>
         ))}
+      </div>
+
+      {/* VOICE INPUT */}
+      <div className="mt-4 border-2 border-white p-3">
+        <VoiceInput onCommand={choose} />
       </div>
 
       {/* PLAYER STATUS */}
