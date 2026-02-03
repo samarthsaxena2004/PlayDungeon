@@ -14,6 +14,24 @@ const client = new Groq({
 export async function POST(req: NextRequest) {
   const { action, state } = await req.json();
 
+  // ───────── TEST ENDPOINT ─────────
+  if (action === "test_damage") {
+    return Response.json({
+      story: "A goblin throws a rock at your head! (-10 HP)",
+      state: {
+        health: Math.max(0, state.health - 10),
+        mana: state.mana,
+        inventory: state.inventory,
+        location: state.location,
+      },
+      choices: [
+        { id: "hit_back", text: "Hit back" },
+        { id: "run", text: "Run away" },
+      ],
+    });
+  }
+  // ─────────────────────────────────
+
   const SYSTEM_PROMPT = `
 You are the Dungeon Master for a hardcore text RPG.
 
@@ -64,13 +82,11 @@ RULES:
     const raw = completion.choices[0].message.content!;
     console.log("RAW:", raw);
 
-    // ─── SAFE PARSE ───────────────────────────────
     let parsed;
 
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // Attempt to extract JSON if model wrapped it
       const match = raw.match(/\{[\s\S]*\}/);
       parsed = match ? JSON.parse(match[0]) : null;
     }
@@ -78,7 +94,6 @@ RULES:
     if (!parsed) throw new Error("Invalid JSON from LLM");
 
     return Response.json(parsed);
-
   } catch (err) {
     console.error("GROQ ERROR:", err);
 

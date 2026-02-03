@@ -23,10 +23,9 @@ export default function Home() {
     location: "cell",
   });
 
-  // 👉 HERE is that line you were confused about
   const playClick = useClickSound();
 
-  // ─── DAMAGE SHAKE STATE ─────────────────────
+  // ─── DAMAGE SHAKE ─────────────────────
   const [hurt, setHurt] = useState(false);
 
   useEffect(() => {
@@ -36,7 +35,7 @@ export default function Home() {
       return () => clearTimeout(t);
     }
   }, [state.health]);
-  // ────────────────────────────────────────────
+  // ──────────────────────────────────────
 
   async function callAI(action: string) {
     const res = await fetch("/api/story", {
@@ -84,7 +83,6 @@ export default function Home() {
   }
 
   return (
-    // ─── ROOT WRAPPED WITH DAMAGE EFFECT ───────
     <div
       className={`min-h-screen bg-black text-white p-4 md:p-8 ${
         hurt ? "damage" : ""
@@ -130,6 +128,21 @@ export default function Home() {
             ? state.inventory.join(", ")
             : "Empty"}
         </div>
+      </div>
+
+      {/* ─── TEST PANEL ─── */}
+      <div className="mt-6 border-2 border-yellow-400 p-4 text-xs">
+        <div>DEBUG</div>
+        <div>Health: {state.health}</div>
+        <div>Choices count: {choices.length}</div>
+        <div>Story length: {story.length}</div>
+
+        <button
+          onClick={() => choose("test_damage")}
+          className="mt-2 border p-2"
+        >
+          TEST DAMAGE
+        </button>
       </div>
     </div>
   );
