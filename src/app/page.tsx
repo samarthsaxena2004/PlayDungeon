@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Typewriter from "@/components/Typewriter";
-
 
 type GameState = {
   health: number;
@@ -21,6 +20,18 @@ export default function Home() {
     inventory: [],
     location: "cell",
   });
+
+  // ─── DAMAGE SHAKE STATE ─────────────────────
+  const [hurt, setHurt] = useState(false);
+
+  useEffect(() => {
+    if (state.health < 100) {
+      setHurt(true);
+      const t = setTimeout(() => setHurt(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [state.health]);
+  // ────────────────────────────────────────────
 
   async function callAI(action: string) {
     const res = await fetch("/api/story", {
@@ -62,8 +73,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8">
-
+    // ─── ROOT WRAPPED WITH DAMAGE EFFECT ───────
+    <div className={`min-h-screen bg-black text-white p-4 md:p-8 ${hurt ? "damage" : ""}`}>
       {/* STORY */}
       <div className="border-4 border-white p-6">
         <Typewriter text={story} />
@@ -95,7 +106,6 @@ export default function Home() {
             : "Empty"}
         </div>
       </div>
-
     </div>
   );
 }
