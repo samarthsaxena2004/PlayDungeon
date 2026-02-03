@@ -20,6 +20,9 @@ export default function Home() {
     location: "cell",
   });
 
+  // ─────────────────────────────────────────────
+  // Call AI backend
+  // ─────────────────────────────────────────────
   async function callAI(action: string) {
     const res = await fetch("/api/story", {
       method: "POST",
@@ -31,22 +34,53 @@ export default function Home() {
     setStory(data.story);
     setChoices(data.choices);
 
-    // merge new state
+    // merge new state from AI
     setState((s) => ({
       ...s,
       ...data.state,
     }));
   }
 
+  // ─────────────────────────────────────────────
+  // Start game
+  // ─────────────────────────────────────────────
   async function startGame() {
     setStarted(true);
     await callAI("start");
   }
 
+  // ─────────────────────────────────────────────
+  // Player chooses option
+  // ─────────────────────────────────────────────
   async function choose(id: string) {
     await callAI(id);
   }
 
+  // ─────────────────────────────────────────────
+  // DEATH SCREEN
+  // ─────────────────────────────────────────────
+  if (started && state.health <= 0) {
+    return (
+      <div className="min-h-screen bg-black text-red-500 p-8 text-center">
+        <h1 className="text-4xl mb-4">YOU DIED</h1>
+
+        <pre className="text-white mb-6 whitespace-pre-wrap">
+          {story}
+        </pre>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="border-2 border-red-500 p-4 hover:bg-red-500 hover:text-black"
+        >
+          RESTART RUN
+        </button>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // START SCREEN
+  // ─────────────────────────────────────────────
   if (!started) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -60,6 +94,9 @@ export default function Home() {
     );
   }
 
+  // ─────────────────────────────────────────────
+  // MAIN GAME UI
+  // ─────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8">
 
@@ -83,13 +120,16 @@ export default function Home() {
         ))}
       </div>
 
-      {/* STATUS */}
-      <div className="mt-6 border-2 border-white p-4 text-sm">
+      {/* PLAYER STATUS */}
+      <div className="mt-6 border-2 border-white p-4 text-sm space-y-1">
         <div>HP: {state.health}</div>
         <div>Mana: {state.mana}</div>
         <div>Location: {state.location}</div>
+
         <div>
-          Inventory: {state.inventory.join(", ") || "Empty"}
+          Inventory: {state.inventory.length > 0
+            ? state.inventory.join(", ")
+            : "Empty"}
         </div>
       </div>
 
