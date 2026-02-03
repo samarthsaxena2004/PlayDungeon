@@ -2,7 +2,7 @@ import type { GameState, StoryResponse } from "@/game/schema";
 import { Cerebras } from "@cerebras/cerebras_cloud_sdk";
 
 const client = new Cerebras({
-  apiKey: process.env.CEREBRAS_API_KEY!,
+  apiKey: process.env.CEREBRAS_API_KEY || "",
 });
 
 const SYSTEM_PROMPT = `
