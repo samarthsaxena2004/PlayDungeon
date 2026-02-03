@@ -5,9 +5,6 @@ export async function generateStory(
   state: GameState
 ): Promise<StoryResponse> {
 
-  // This is temporary local AI simulation
-  // Tomorrow replaced with real LLM
-
   if (action === "start") {
     return {
       story: `
@@ -21,6 +18,20 @@ A rusty door stands before you.
       choices: [
         { id: "look", text: "Look around" },
         { id: "door", text: "Inspect door" },
+      ],
+    };
+  }
+
+  if (action === "look") {
+    return {
+      story: `
+The walls are damp. One stone looks loose.
+The door bears strange runes.
+      `,
+      state: {},
+      choices: [
+        { id: "stone", text: "Pull loose stone" },
+        { id: "runes", text: "Touch runes" },
       ],
     };
   }
