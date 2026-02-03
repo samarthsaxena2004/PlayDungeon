@@ -1,9 +1,17 @@
+"use client";
+
 import StoryPanel from "@/components/story-panel";
 import ChoicesPanel from "@/components/choices-panel";
 import PlayerStatus from "@/components/player-status";
 import Inventory from "@/components/inventory";
 
+import { useTambo } from "@tambo-ai/react";
+
 export default function Home() {
+
+  // 👉 This will later render AI components
+  const { render } = useTambo();
+
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8 font-mono">
 
@@ -18,6 +26,7 @@ export default function Home() {
         </p>
       </div>
 
+      {/* For now we keep static UI */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 space-y-6">
           <StoryPanel />
