@@ -1,10 +1,12 @@
-import type { GameState, StoryResponse } from "@/game/schema";
+import type { GameState } from "@/game/schema";
 
-export async function generateStory(
-  action: string,
-  state: GameState
-): Promise<StoryResponse> {
-
+export async function generateStory({
+  action,
+  state,
+}: {
+  action: string;
+  state: GameState;
+}) {
   const res = await fetch("/api/story", {
     method: "POST",
     body: JSON.stringify({ action, state }),
@@ -12,3 +14,8 @@ export async function generateStory(
 
   return res.json();
 }
+
+generateStory.tambo = {
+  name: "generateStory",
+  description: "Main game engine",
+};
