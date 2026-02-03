@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Typewriter from "@/components/Typewriter";
+
 
 type GameState = {
   health: number;
@@ -64,9 +66,7 @@ export default function Home() {
 
       {/* STORY */}
       <div className="border-4 border-white p-6">
-        <pre className="whitespace-pre-wrap font-mono">
-          {story}
-        </pre>
+        <Typewriter text={story} />
       </div>
 
       {/* CHOICES */}
