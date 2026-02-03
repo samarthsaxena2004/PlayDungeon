@@ -14,35 +14,42 @@ const client = new Groq({
 export async function POST(req: NextRequest) {
   const { action, state } = await req.json();
 
-const SYSTEM_PROMPT = `
-You are a Dungeon Master that controls UI via Tambo.
+  const SYSTEM_PROMPT = `
+You are the Dungeon Master for a hardcore text RPG.
 
-You MUST respond ONLY with Tambo component calls.
+🚨 CRITICAL:
+- You must return ONLY valid JSON
+- NEVER return JSX, HTML, or components
+- NEVER include <StoryText> or any tags
+- NO markdown
+- NO explanations
 
-EXAMPLE RESPONSE:
+FORMAT REQUIRED:
 
-<StoryText text="You stand in a cell" />
+{
+  "story": "narrative text",
+  "state": {
+    "health": number,
+    "mana": number,
+    "inventory": string[],
+    "location": string
+  },
+  "choices": [
+    { "id": "string", "text": "string" }
+  ]
+}
 
-<PlayerStatus
-  hp={100}
-  mana={50}
-  location="cell"
-  inventory={["torch"]}
-/>
-
-<ChoiceButtons
-  choices={[
-    {id:"look", text:"Look around"},
-    {id:"door", text:"Open door"}
-  ]}
-/>
+MECHANICS:
+- Enemies deal 5–20 damage
+- Healing potions restore 15 HP
+- Mana spells cost 10 mana
+- If health ≤ 0 → game over
 
 RULES:
-- Always include StoryText
-- Always include PlayerStatus
-- Always include ChoiceButtons
+- Never repeat same narration
+- Keep tension high
+- Max 180 words
 `;
-
 
   try {
     const completion = await client.chat.completions.create({
@@ -57,15 +64,28 @@ RULES:
     const raw = completion.choices[0].message.content!;
     console.log("RAW:", raw);
 
-    return Response.json(JSON.parse(raw));
+    // ─── SAFE PARSE ───────────────────────────────
+    let parsed;
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Attempt to extract JSON if model wrapped it
+      const match = raw.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : null;
+    }
+
+    if (!parsed) throw new Error("Invalid JSON from LLM");
+
+    return Response.json(parsed);
 
   } catch (err) {
     console.error("GROQ ERROR:", err);
 
     return Response.json({
-      story: "Arcane energies block the path (AI error).",
+      story: "Arcane energies distort reality. The dungeon shudders.",
       state,
-      choices: [{ id: "retry", text: "Try again" }],
+      choices: [{ id: "retry", text: "Regain focus" }],
     });
   }
 }
