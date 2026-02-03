@@ -3,6 +3,7 @@ import { ChoiceButtons } from "@/components/ChoiceButtons";
 import { PlayerStatus } from "@/components/PlayerStatus";
 import { InventoryPanel } from "@/components/InventoryPanel";
 import { DungeonCanvas } from "@/components/DungeonCanvas";
+import { CombatHUD } from "@/components/CombatHUD";
 
 export const tamboComponents = [
   StoryText,
@@ -10,4 +11,5 @@ export const tamboComponents = [
   PlayerStatus,
   InventoryPanel,
   DungeonCanvas,
+  CombatHUD,
 ];
