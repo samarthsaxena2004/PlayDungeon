@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Typewriter from "@/components/Typewriter";
 import VoiceInput from "@/components/VoiceInput";
 import { useClickSound } from "@/components/useClickSound";
-
 import { useTambo } from "@tambo-ai/react";
 
 type GameState = {
@@ -15,9 +14,9 @@ type GameState = {
 };
 
 export default function Home() {
-  // ─── EXISTING WORKING STATE ─────────────────────
+  // ─── CORE STATE ───────────────────────────────
   const [started, setStarted] = useState(false);
-  const [story, setStory] = useState("");
+  const [story, setStory] = useState<string>("");
   const [choices, setChoices] = useState<any[]>([]);
   const [state, setState] = useState<GameState>({
     health: 100,
@@ -27,11 +26,9 @@ export default function Home() {
   });
 
   const playClick = useClickSound();
-
-  // ─── TAMBO (NON-BREAKING) ───────────────────────
   const tambo = useTambo();
 
-  // ─── DAMAGE SHAKE ───────────────────────────────
+  // ─── DAMAGE SHAKE ─────────────────────────────
   const [hurt, setHurt] = useState(false);
 
   useEffect(() => {
@@ -42,25 +39,33 @@ export default function Home() {
     }
   }, [state.health]);
 
-  // ─── CURRENT AI CALL (KEEP AS IS) ───────────────
+  // ─── AI CALL ──────────────────────────────────
   async function callAI(action: string) {
-    const res = await fetch("/api/story", {
-      method: "POST",
-      body: JSON.stringify({ action, state }),
-    });
+    try {
+      const res = await fetch("/api/story", {
+        method: "POST",
+        body: JSON.stringify({ action, state }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    setStory(data.story);
-    setChoices(Array.isArray(data?.choices) ? data.choices : []);
+      // SAFE ASSIGNMENTS
+      setStory(typeof data?.story === "string" ? data.story : "");
 
-    setState((s) => ({
-      ...s,
-      ...data.state,
-    }));
+      setChoices(Array.isArray(data?.choices) ? data.choices : []);
 
-    // 👉 ALSO FEED TAMBO (parallel layer)
-    tambo.runTool?.("generateStory", { action, state });
+      setState((s) => ({
+        ...s,
+        ...(data?.state || {}),
+      }));
+
+      // 👉 Parallel Tambo layer (non-blocking)
+      if (typeof tambo?.runTool === "function") {
+        tambo.runTool("generateStory", { action, state });
+      }
+    } catch (err) {
+      console.error("CLIENT AI ERROR:", err);
+    }
   }
 
   async function startGame() {
@@ -74,7 +79,7 @@ export default function Home() {
     await callAI(id);
   }
 
-  // ─── START SCREEN ───────────────────────────────
+  // ─── START SCREEN ─────────────────────────────
   if (!started) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -92,33 +97,29 @@ export default function Home() {
     );
   }
 
-  // ─── MAIN GAME UI ───────────────────────────────
+  // ─── MAIN UI ──────────────────────────────────
   return (
     <div
       className={`min-h-screen bg-black text-white p-4 md:p-8 ${
         hurt ? "damage" : ""
       }`}
     >
-      {/* ─── CLASSIC STORY (YOUR WORKING ONE) ─── */}
+      {/* ─── STORY ─────────────────────────────── */}
       <div className="border-4 border-white p-6">
-        <Typewriter text={story} />
+        <Typewriter text={story || ""} />
       </div>
 
-      {/* ─── TAMBO GENERATIVE LAYER ─── */}
+      {/* ─── TAMBO GENERATIVE ZONE ─────────────── */}
       <div className="mt-4 border-2 border-dashed border-purple-500 p-3">
-        {/*
-          This is the hackathon magic zone.
-          Judges will see REAL generative UI here.
-        */}
-        {typeof tambo.render === "function" && tambo.render()}
+        {typeof tambo?.render === "function" && tambo.render()}
       </div>
 
-      {/* ─── CHOICES (WORKING) ─── */}
+      {/* ─── CHOICES ───────────────────────────── */}
       <div className="mt-4 space-y-2">
         {(choices || []).map((c) => (
           <button
-            key={c.id}
-            onClick={() => choose(c.id)}
+            key={c?.id}
+            onClick={() => choose(c?.id)}
             className="
               block w-full border-2 border-white p-3
               hover:bg-white hover:text-black
@@ -126,18 +127,17 @@ export default function Home() {
               active:scale-[0.98]
             "
           >
-            {c.text}
+            {c?.text}
           </button>
         ))}
       </div>
 
-
-      {/* ─── VOICE ─── */}
+      {/* ─── VOICE INPUT ───────────────────────── */}
       <div className="mt-4 border-2 border-white p-3">
         <VoiceInput onCommand={choose} />
       </div>
 
-      {/* ─── PLAYER STATUS ─── */}
+      {/* ─── PLAYER STATUS ─────────────────────── */}
       <div className="mt-6 border-2 border-white p-4 text-sm space-y-1">
         <div>HP: {state.health}</div>
         <div>Mana: {state.mana}</div>
@@ -145,18 +145,18 @@ export default function Home() {
 
         <div>
           Inventory:{" "}
-          {state.inventory.length > 0
+          {state.inventory?.length > 0
             ? state.inventory.join(", ")
             : "Empty"}
         </div>
       </div>
 
-      {/* ─── DEBUG ─── */}
+      {/* ─── DEBUG PANEL ───────────────────────── */}
       <div className="mt-6 border-2 border-yellow-400 p-4 text-xs">
         <div>DEBUG</div>
-        <div>Health: {state.health}</div>
-        <div>Choices count: {choices.length}</div>
-        <div>Story length: {story.length}</div>
+        <div>Health: {state?.health ?? 0}</div>
+        <div>Choices count: {(choices || []).length}</div>
+        <div>Story length: {(story || "").length}</div>
 
         <button
           onClick={() => choose("test_damage")}
