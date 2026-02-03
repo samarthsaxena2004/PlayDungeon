@@ -14,7 +14,6 @@ type GameState = {
 };
 
 export default function Home() {
-  // ─── CORE STATE ───────────────────────────────
   const [started, setStarted] = useState(false);
   const [story, setStory] = useState<string>("");
   const [choices, setChoices] = useState<any[]>([]);
@@ -26,6 +25,8 @@ export default function Home() {
   });
 
   const playClick = useClickSound();
+
+  // 👉 We keep Tambo instance only (no unsafe methods)
   const tambo = useTambo();
 
   // ─── DAMAGE SHAKE ─────────────────────────────
@@ -49,7 +50,6 @@ export default function Home() {
 
       const data = await res.json();
 
-      // SAFE ASSIGNMENTS
       setStory(typeof data?.story === "string" ? data.story : "");
 
       setChoices(Array.isArray(data?.choices) ? data.choices : []);
@@ -59,10 +59,7 @@ export default function Home() {
         ...(data?.state || {}),
       }));
 
-      // 👉 Parallel Tambo layer (non-blocking)
-      if (typeof tambo?.runTool === "function") {
-        tambo.runTool("generateStory", { action, state });
-      }
+      // 👉 Later we will connect to Tambo in PHASE 5
     } catch (err) {
       console.error("CLIENT AI ERROR:", err);
     }
@@ -104,17 +101,12 @@ export default function Home() {
         hurt ? "damage" : ""
       }`}
     >
-      {/* ─── STORY ─────────────────────────────── */}
+      {/* STORY */}
       <div className="border-4 border-white p-6">
         <Typewriter text={story || ""} />
       </div>
 
-      {/* ─── TAMBO GENERATIVE ZONE ─────────────── */}
-      <div className="mt-4 border-2 border-dashed border-purple-500 p-3">
-        {typeof tambo?.render === "function" && tambo.render()}
-      </div>
-
-      {/* ─── CHOICES ───────────────────────────── */}
+      {/* CHOICES */}
       <div className="mt-4 space-y-2">
         {(choices || []).map((c) => (
           <button
@@ -132,12 +124,12 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ─── VOICE INPUT ───────────────────────── */}
+      {/* VOICE INPUT */}
       <div className="mt-4 border-2 border-white p-3">
         <VoiceInput onCommand={choose} />
       </div>
 
-      {/* ─── PLAYER STATUS ─────────────────────── */}
+      {/* PLAYER STATUS */}
       <div className="mt-6 border-2 border-white p-4 text-sm space-y-1">
         <div>HP: {state.health}</div>
         <div>Mana: {state.mana}</div>
@@ -151,7 +143,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ─── DEBUG PANEL ───────────────────────── */}
+      {/* DEBUG */}
       <div className="mt-6 border-2 border-yellow-400 p-4 text-xs">
         <div>DEBUG</div>
         <div>Health: {state?.health ?? 0}</div>
