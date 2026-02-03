@@ -52,7 +52,7 @@ export default function Home() {
     const data = await res.json();
 
     setStory(data.story);
-    setChoices(data.choices);
+    setChoices(Array.isArray(data?.choices) ? data.choices : []);
 
     setState((s) => ({
       ...s,
@@ -115,7 +115,7 @@ export default function Home() {
 
       {/* ─── CHOICES (WORKING) ─── */}
       <div className="mt-4 space-y-2">
-        {choices.map((c) => (
+        {(choices || []).map((c) => (
           <button
             key={c.id}
             onClick={() => choose(c.id)}
@@ -130,6 +130,7 @@ export default function Home() {
           </button>
         ))}
       </div>
+
 
       {/* ─── VOICE ─── */}
       <div className="mt-4 border-2 border-white p-3">
