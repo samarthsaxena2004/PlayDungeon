@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Typewriter from "@/components/Typewriter";
 import VoiceInput from "@/components/VoiceInput";
 import { useClickSound } from "@/components/useClickSound";
 import { useTambo } from "@tambo-ai/react";
+
+// Import registry to manually render nodes
+import { tamboComponents } from "@/tambo/registry";
 
 type GameState = {
   health: number;
@@ -15,8 +17,11 @@ type GameState = {
 
 export default function Home() {
   const [started, setStarted] = useState(false);
-  const [story, setStory] = useState<string>("");
-  const [choices, setChoices] = useState<any[]>([]);
+
+  // TAMBO DRIVEN UI
+  const [ui, setUI] = useState<any[]>([]);
+
+  // Core state still kept locally
   const [state, setState] = useState<GameState>({
     health: 100,
     mana: 50,
@@ -25,8 +30,6 @@ export default function Home() {
   });
 
   const playClick = useClickSound();
-
-  // 👉 We keep Tambo instance only (no unsafe methods)
   const tambo = useTambo();
 
   // ─── DAMAGE SHAKE ─────────────────────────────
@@ -40,7 +43,37 @@ export default function Home() {
     }
   }, [state.health]);
 
-  // ─── AI CALL ──────────────────────────────────
+  // ─── ACTION BRIDGE (for data-tambo-action) ─────
+  useEffect(() => {
+    const handler = (e: any) => {
+      const id = e.target?.getAttribute?.("data-tambo-action");
+      if (id) {
+        choose(id);
+      }
+    };
+
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
+  // ─── GENERIC NODE RENDERER ─────────────────────
+  function renderNode(node: any, key: number) {
+    const Comp = (tamboComponents as any[]).find(
+      (c: any) => c.name === node.component
+    );
+
+    if (!Comp) {
+      return (
+        <div key={key} className="border border-red-500 p-2">
+          Missing component: {node.component}
+        </div>
+      );
+    }
+
+    return <Comp key={key} {...node.props} />;
+  }
+
+  // ─── CALL AI (TAMBO MODE) ──────────────────────
   async function callAI(action: string) {
     try {
       const res = await fetch("/api/story", {
@@ -50,16 +83,15 @@ export default function Home() {
 
       const data = await res.json();
 
-      setStory(typeof data?.story === "string" ? data.story : "");
-
-      setChoices(Array.isArray(data?.choices) ? data.choices : []);
+      // 👉 MAIN TAMBO MAGIC
+      if (Array.isArray(data?.ui)) {
+        setUI(data.ui);
+      }
 
       setState((s) => ({
         ...s,
         ...(data?.state || {}),
       }));
-
-      // 👉 Later we will connect to Tambo in PHASE 5
     } catch (err) {
       console.error("CLIENT AI ERROR:", err);
     }
@@ -94,61 +126,28 @@ export default function Home() {
     );
   }
 
-  // ─── MAIN UI ──────────────────────────────────
+  // ─── MAIN TAMBO UI ─────────────────────────────
   return (
     <div
       className={`min-h-screen bg-black text-white p-4 md:p-8 ${
         hurt ? "damage" : ""
       }`}
     >
-      {/* STORY */}
-      <div className="border-4 border-white p-6">
-        <Typewriter text={story || ""} />
+      {/* 🔥 TRUE GENERATIVE UI ZONE */}
+      <div className="space-y-4">
+        {(ui || []).map((node, i) => renderNode(node, i))}
       </div>
 
-      {/* CHOICES */}
-      <div className="mt-4 space-y-2">
-        {(choices || []).map((c) => (
-          <button
-            key={c?.id}
-            onClick={() => choose(c?.id)}
-            className="
-              block w-full border-2 border-white p-3
-              hover:bg-white hover:text-black
-              transition-all duration-150
-              active:scale-[0.98]
-            "
-          >
-            {c?.text}
-          </button>
-        ))}
-      </div>
-
-      {/* VOICE INPUT */}
+      {/* VOICE STILL WORKS AS GLOBAL INPUT */}
       <div className="mt-4 border-2 border-white p-3">
         <VoiceInput onCommand={choose} />
       </div>
 
-      {/* PLAYER STATUS */}
-      <div className="mt-6 border-2 border-white p-4 text-sm space-y-1">
-        <div>HP: {state.health}</div>
-        <div>Mana: {state.mana}</div>
-        <div>Location: {state.location}</div>
-
-        <div>
-          Inventory:{" "}
-          {state.inventory?.length > 0
-            ? state.inventory.join(", ")
-            : "Empty"}
-        </div>
-      </div>
-
-      {/* DEBUG */}
+      {/* DEBUG PANEL */}
       <div className="mt-6 border-2 border-yellow-400 p-4 text-xs">
         <div>DEBUG</div>
         <div>Health: {state?.health ?? 0}</div>
-        <div>Choices count: {(choices || []).length}</div>
-        <div>Story length: {(story || "").length}</div>
+        <div>UI nodes: {(ui || []).length}</div>
 
         <button
           onClick={() => choose("test_damage")}
