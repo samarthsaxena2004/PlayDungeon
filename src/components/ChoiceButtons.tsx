@@ -1,7 +1,11 @@
 import ChoicesPanel from "./choices-panel";
 import { z } from "zod";
 
-export const propsSchema = z.object({
+export function ChoiceButtons(props: any) {
+  return <ChoicesPanel />;
+}
+
+ChoiceButtons.propsSchema = z.object({
   choices: z
     .array(
       z.object({
@@ -11,7 +15,3 @@ export const propsSchema = z.object({
     )
     .optional(),
 });
-
-export function ChoiceButtons(props: z.infer<typeof propsSchema>) {
-  return <ChoicesPanel />;
-}
