@@ -1,37 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { generateStory } from "@/tambo/tools";
+
+type GameState = {
+  health: number;
+  mana: number;
+  inventory: string[];
+  location: string;
+};
 
 export default function Home() {
   const [started, setStarted] = useState(false);
   const [story, setStory] = useState("");
   const [choices, setChoices] = useState<any[]>([]);
+  const [state, setState] = useState<GameState>({
+    health: 100,
+    mana: 50,
+    inventory: [],
+    location: "cell",
+  });
+
+  async function callAI(action: string) {
+    const res = await fetch("/api/story", {
+      method: "POST",
+      body: JSON.stringify({ action, state }),
+    });
+
+    const data = await res.json();
+
+    setStory(data.story);
+    setChoices(data.choices);
+
+    // merge new state
+    setState((s) => ({
+      ...s,
+      ...data.state,
+    }));
+  }
 
   async function startGame() {
     setStarted(true);
-
-    const res = await generateStory("start", {
-      health: 100,
-      mana: 50,
-      inventory: [],
-      location: "cell",
-    });
-
-    setStory(res.story);
-    setChoices(res.choices);
+    await callAI("start");
   }
 
-  async function onChoice(id: string) {
-    const res = await generateStory(id, {
-      health: 100,
-      mana: 50,
-      inventory: [],
-      location: "cell",
-    });
-
-    setStory(res.story);
-    setChoices(res.choices);
+  async function choose(id: string) {
+    await callAI(id);
   }
 
   if (!started) {
@@ -49,21 +62,37 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8">
+
+      {/* STORY */}
       <div className="border-4 border-white p-6">
-        <pre className="whitespace-pre-wrap">{story}</pre>
+        <pre className="whitespace-pre-wrap font-mono">
+          {story}
+        </pre>
       </div>
 
+      {/* CHOICES */}
       <div className="mt-4 space-y-2">
         {choices.map((c) => (
           <button
             key={c.id}
-            onClick={() => onChoice(c.id)}
+            onClick={() => choose(c.id)}
             className="block w-full border-2 border-white p-3 hover:bg-white hover:text-black"
           >
             {c.text}
           </button>
         ))}
       </div>
+
+      {/* STATUS */}
+      <div className="mt-6 border-2 border-white p-4 text-sm">
+        <div>HP: {state.health}</div>
+        <div>Mana: {state.mana}</div>
+        <div>Location: {state.location}</div>
+        <div>
+          Inventory: {state.inventory.join(", ") || "Empty"}
+        </div>
+      </div>
+
     </div>
   );
 }
