@@ -1,7 +1,7 @@
 "use client";
 
-import { tambo } from "@/tambo/registry";
 import { TamboProvider } from "@tambo-ai/react";
+import { tamboComponents } from "@/tambo/registry";
 
 export default function Providers({
   children,
@@ -9,7 +9,7 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <TamboProvider instance={tambo}>
+    <TamboProvider components={tamboComponents}>
       {children}
     </TamboProvider>
   );
