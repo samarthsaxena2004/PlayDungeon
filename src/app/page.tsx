@@ -86,7 +86,12 @@ export default function Home() {
           <button
             key={c.id}
             onClick={() => choose(c.id)}
-            className="block w-full border-2 border-white p-3 hover:bg-white hover:text-black"
+            className="
+              block w-full border-2 border-white p-3
+              hover:bg-white hover:text-black
+              transition-all duration-150
+              active:scale-[0.98]
+              "
           >
             {c.text}
           </button>
