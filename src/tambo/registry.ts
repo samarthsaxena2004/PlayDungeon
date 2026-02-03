@@ -3,9 +3,9 @@ import { ChoiceButtons } from "@/components/ChoiceButtons";
 import { PlayerStatus } from "@/components/PlayerStatus";
 import { InventoryPanel } from "@/components/InventoryPanel";
 
-export const tamboComponents = {
+export const tamboComponents = [
   StoryText,
   ChoiceButtons,
   PlayerStatus,
   InventoryPanel,
-};
+];
