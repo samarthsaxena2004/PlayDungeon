@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { useGameTambo } from "@/tambo/client";
+import { Tambo } from "@tambo-ai/react";
 import { generateStory } from "@/tambo/tools";
 
 export default function Home() {
 
-  const { render } = useGameTambo();
+  const tambo = useGameTambo();
   const [started, setStarted] = useState(false);
 
   async function startGame() {
     setStarted(true);
 
-    // First turn (mock today)
     await generateStory("start", {
       health: 100,
       mana: 50,
@@ -34,10 +34,9 @@ export default function Home() {
     );
   }
 
-  // 👉 Tambo will render components here
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8">
-      {render()}
+      <Tambo />
     </div>
   );
 }
