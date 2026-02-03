@@ -1,3 +1,5 @@
-import { TamboRegistry } from "@tambo-ai/react";
+import { createTambo } from "@tambo-ai/react";
 
-export const registry = new TamboRegistry();
+export const tambo = createTambo({
+  components: {},
+});
