@@ -5,6 +5,8 @@ import VoiceInput from "@/components/VoiceInput";
 import { useClickSound } from "@/components/useClickSound";
 import { useTambo } from "@tambo-ai/react";
 
+import Ambient from "@/components/Ambient";
+
 // Import registry to manually render nodes
 import { tamboComponents } from "@/tambo/registry";
 
@@ -13,6 +15,12 @@ type GameState = {
   mana: number;
   inventory: string[];
   location: string;
+
+  // 👇 NEW – cinematic metadata from LLM
+  meta?: {
+    danger?: number;
+    mood?: string;
+  };
 };
 
 export default function Home() {
@@ -27,6 +35,10 @@ export default function Home() {
     mana: 50,
     inventory: [],
     location: "cell",
+    meta: {
+      danger: 0,
+      mood: "neutral",
+    },
   });
 
   const playClick = useClickSound();
@@ -36,12 +48,12 @@ export default function Home() {
   const [hurt, setHurt] = useState(false);
 
   useEffect(() => {
-    if (state.health < 100) {
+    if (state.health < 100 || (state.meta?.danger || 0) > 60) {
       setHurt(true);
       const t = setTimeout(() => setHurt(false), 300);
       return () => clearTimeout(t);
     }
-  }, [state.health]);
+  }, [state.health, state.meta?.danger]);
 
   // ─── ACTION BRIDGE (for data-tambo-action) ─────
   useEffect(() => {
@@ -133,8 +145,16 @@ export default function Home() {
         hurt ? "damage" : ""
       }`}
     >
+      {/* 🎧 CINEMATIC SOUND DIRECTOR */}
+      <Ambient state={state} />
+
+      {/* 🩸 DANGER OVERLAY */}
+      {state.meta?.danger && state.meta.danger > 50 && (
+        <div className="fixed inset-0 pointer-events-none bg-red-900/10 animate-pulse" />
+      )}
+
       {/* 🔥 TRUE GENERATIVE UI ZONE */}
-      <div className="space-y-4">
+      <div className="space-y-4 relative z-10">
         {(ui || []).map((node, i) => renderNode(node, i))}
       </div>
 
@@ -147,6 +167,8 @@ export default function Home() {
       <div className="mt-6 border-2 border-yellow-400 p-4 text-xs">
         <div>DEBUG</div>
         <div>Health: {state?.health ?? 0}</div>
+        <div>Danger: {state.meta?.danger ?? 0}</div>
+        <div>Mood: {state.meta?.mood ?? "none"}</div>
         <div>UI nodes: {(ui || []).length}</div>
 
         <button
