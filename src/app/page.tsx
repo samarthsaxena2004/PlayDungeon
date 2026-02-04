@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChatInterface } from "@/components/layout/ChatInterface";
 import { GenerativeCanvas } from "@/components/layout/GenerativeCanvas";
 import { useGameStore } from "@/game/store";
 import { useClickSound } from "@/components/useClickSound";
 import { MainMenu } from "@/components/MainMenu";
+import { SystemMenu } from "@/components/SystemMenu";
+import { useInputManager } from "@/game/useInputManager";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
@@ -15,12 +17,18 @@ export default function Home() {
   } = useGameStore();
 
   const playClick = useClickSound();
+  const [isChatOpen, setIsChatOpen] = useState(false); // Default closed for immersion? Or maybe open initially.
+
+  // Auto-open chat on new game, but allow toggling
+  useEffect(() => {
+    if (activeGame) setIsChatOpen(true);
+  }, [activeGame]);
 
   // ─── STARTUP / RESET ─────────────────────────────
   useEffect(() => {
-    // When a game starts, we might want to reset the scene or load initial state
     if (activeGame === 'dungeon') {
       setScene([
+        { component: "BackdropImage", props: { alt: "hallway" } }, // Default bg
         { component: "DungeonCanvas", props: { location: "Entrance Hall" } },
         { component: "StoryText", props: { text: "The heavy iron doors slam shut behind you." } },
         { component: "HeroCard", props: { health: 100, maxHealth: 100, mana: 50, maxMana: 50 } },
@@ -28,14 +36,13 @@ export default function Home() {
       ]);
       addMessage({ role: "system", content: "Welcome to Deep Dungeon." });
     }
-    // We can add other init logic for 'maze' etc later
   }, [activeGame]);
 
 
   // ─── ACTION HANDLER ────────────────────────────
   async function handleAction(action: string) {
     if (action === "back") {
-      setActiveGame(null); // Quit to menu
+      setActiveGame(null);
       return;
     }
 
@@ -49,7 +56,7 @@ export default function Home() {
       const res = await fetch("/api/story", {
         method: "POST",
         body: JSON.stringify({
-          gameId: activeGame, // Pass the ID so API knows which brain to use
+          gameId: activeGame,
           action,
           state: {
             stats: currentState.stats,
@@ -80,7 +87,10 @@ export default function Home() {
     }
   }
 
-  // Global click handler
+  // ─── INPUT HOOK ────────────────────────────────
+  useInputManager(handleAction);
+
+  // Global click handler (retained for UI interactions)
   useEffect(() => {
     const handler = (e: any) => {
       const id = e.target?.getAttribute?.("data-tambo-action");
@@ -90,39 +100,45 @@ export default function Home() {
     return () => document.removeEventListener("click", handler);
   }, [meta, activeGame]);
 
-  // ─── RENDER ──────────────────────────────────────
 
-  if (!activeGame) {
-    return <MainMenu />;
-  }
+  if (!activeGame) return <MainMenu />;
 
   return (
-    <main className="flex h-screen w-full bg-black text-white relative overflow-hidden font-sans selection:bg-purple-500/30">
+    <main className="relative h-screen w-full bg-black text-white overflow-hidden font-sans selection:bg-purple-500/30">
 
-      {/* ─── LEFT PANEL: CHAT & NARRATIVE ────────── */}
-      <section className="w-[400px] flex-shrink-0 relative z-20 shadow-2xl">
-        <ChatInterface onAction={handleAction} />
-      </section>
-
-      {/* ─── RIGHT PANEL: GENERATIVE CANVAS ──────── */}
-      <section className="flex-1 relative z-10 bg-[#050505]">
+      {/* ─── LAYER 1: IMMERSIVE CANVAS (FULL SCREEN) ─── */}
+      <section className="absolute inset-0 z-0">
         <GenerativeCanvas />
       </section>
 
-      {/* ─── GLOBAL OVERLAYS ─────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none scanline z-50 opacity-20 mix-blend-overlay" />
+      {/* ─── LAYER 2: CHAT OVERLAY (LEFT) ──────────── */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.section
+            initial={{ x: -400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -400, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute top-0 left-0 bottom-0 w-[400px] z-20 shadow-2xl bg-black/80 backdrop-blur-md border-r border-white/10"
+          >
+            <ChatInterface onAction={handleAction} />
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      {/* ─── LAYER 3: SYSTEM HUD (RIGHT) ───────────── */}
+      <SystemMenu
+        isChatOpen={isChatOpen}
+        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        onExit={() => setActiveGame(null)}
+      />
+
+      {/* ─── LAYER 4: GLOBAL FX ────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none scanline z-50 opacity-10 mix-blend-overlay" />
 
       {meta.dangerLevel > 80 && (
         <div className="fixed inset-0 pointer-events-none bg-red-900/10 animate-pulse z-40" />
       )}
-
-      {/* Quit Button (Secret) */}
-      <button
-        onClick={() => setActiveGame(null)}
-        className="fixed top-4 right-4 z-[60] text-xs text-zinc-800 hover:text-white transition-colors"
-      >
-        EXIT CART
-      </button>
 
     </main>
   );

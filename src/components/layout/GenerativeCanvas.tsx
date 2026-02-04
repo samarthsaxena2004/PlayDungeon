@@ -109,11 +109,7 @@ export function GenerativeCanvas() {
                 </div>
             )}
 
-            {/* ─── DECORATIVE FOOTER ────────────────────────── */}
-            <div className="h-6 mt-2 flex items-center justify-between text-[10px] text-zinc-600 font-mono uppercase tracking-widest relative z-20">
-                <span>LOC: {meta.location}</span>
-                <span>STATUS: {isCombat ? "COMBAT ENGAGED" : "EXPLORATION"}</span>
-            </div>
+
         </div>
     );
 }

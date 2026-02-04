@@ -1,0 +1,55 @@
+Asset Generation Guide: PlayDungeon Arcade
+Use these prompts with your Image Generation AI (Nano Banana, Midjourney, etc.) to create high-quality, dynamic assets.
+
+🎨 Asset Strategy: "The Living Game"
+To make the game feel alive (like a moving GIF):
+
+Backdrops: We will generate "Cinemagraph" style images. In the code, we will apply a slow CSS pan/zoom (Ken Burns effect) to make them breathe.
+Characters: We will generate "Sprites". If you can generate 2 frames (A and B), we can rapid-swap them in CSS to create an "Idle Animation".
+🏰 Game 1: Deep Dungeon
+🖼️ Dynamic Backdrops (Cinemagraphs)
+Target Style: Dark Fantasy, Oil Painting, 90s RPG Render
+
+Context	Prompt
+Dungeon Hallway	First person perspective of a dark stone dungeon corridor, flickering torchlight on wet cobblestones, deep shadows, atmospheric fog, menacing atmosphere, ps1 retro graphics style, seamless loop texture --ar 16:9
+Ancient Crypt	Inside a dusty ancient crypt, rows of stone sarcophagi, blue spectral mist on the floor, god rays coming from cracked ceiling, cinematic lighting, dark fantasy RPG background --ar 16:9
+Boss Room	Grand dark throne room, red carpet leading to a jagged iron throne, stained glass windows with evil runes, floating dust particles, ominous red lighting, dramatic angle --ar 16:9
+👤 Characters (Visuals)
+Target Style: Pixel Art or High-Res Cutout
+
+Character	Prompt
+Hero (Idle)	Fantasy knight hero standing in idle battle stance, holding a glowing sword, dark armor, full body shot, determined expression, black background for easy removal, 32-bit pixel art style
+Hero (Attack)	Fantasy knight hero mid-swing attacking with sword, dynamic action pose, blurring motion, glowing effect on blade, black background, 32-bit pixel art style
+Goblin Enemy	Grotesque green goblin holding a jagged dagger, hunched over, drooling, evil grin, glowing yellow eyes, dark fantasy style, isolated on black background
+🧩 Game 2: Neural Maze
+🖼️ Dynamic Backdrops
+Target Style: Retro-Futurism, Tron, Synthwave
+
+Context	Prompt
+The Grid (Standard)	Infinite neon grid tunnel, retro tech 80s synthesizer style, glowing pink and cyan lines, deep black void, digital fog, misty horizon, seamless looping tunnel --ar 16:9
+Glitch Sector	Cyberpunk digital distortion hallway, corrupted data streams raining down like matrix code, red error messages floating, broken glass aesthetic, glitch art style --ar 16:9
+👾 Game 3: Cyber Pigeon (Upcoming)
+🖼️ Dynamic Backdrops
+Target Style: Pixel Art City, scrolling
+
+Context	Prompt
+Neon Skyline	Pixel art futuristic city skyline at night, parallax scrolling layers, purple smog, towering skyscrapers with neon advertisements, cyberpunk 2077 aesthetic, blade runner vibe, wide angle --ar 16:9
+🐦 Character Sprites
+Target Style: Cute 8-bit
+
+Character	Prompt
+Pigeon (Flying)	Cybernetic pigeon with metal wings flying, glowing red eye, robot bird, cute 8-bit pixel art side view, isolated on transparent background
+👻 Game 4: Shadow Piggy (Upcoming)
+🖼️ Dynamic Backdrops
+Target Style: Horror, VHS Grain
+
+Context	Prompt
+Haunted House	Creepy abandoned house hallway at night, flashlight beam illuminating peeling wallpaper, wooden floorboards, VHS tracking static overlay, photorealistic horror game style --ar 16:9
+🐷 Character
+Target Style: Low-poly Horror
+
+Character	Prompt
+Piggy Monster	Terrifying anthropomorphic pig monster wearing a dress, holding a baseball bat, glowing white eyes, dark shadow covering face, ps1 horror survival style, low poly model render
+
+Comment
+⌥⌘M
