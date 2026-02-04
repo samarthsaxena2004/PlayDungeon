@@ -1,0 +1,37 @@
+Dynamic UI Asset Generation Guide: Deep Dungeon
+Use these prompts to generate UI components that match the "Dark Fantasy / 90s RPG" aesthetic.
+
+🎨 UI Strategy: "Diegetic & Skeuomorphic"
+The UI should look like it physically belongs in the dungeon (made of stone, metal, parchment, blood).
+
+🏰 Component: Game Frame / HUD
+Context: Main border for the game screen.
+Prompt:
+Dark fantasy RPG user interface border, cracked stone texture with iron chains, gothic gargoyles in corners, dark grey and mossy green palette, high detailed 90s render style, transparent center area, seamless looping texture for edges --ar 16:9
+
+🩸 Component: Health Bar
+Context: Visual indicator of player health.
+Prompt (Full Health):
+Ornate gothic glass vial filled with glowing red liquid, gold filigree casing, realistic reflection, dark fantasy style, isolated on black background
+Prompt (Low Health):
+Cracked glass vial with very little dark red liquid, dusty and cobwebbed gold casing, ominous lighting, isolated on black background
+
+⚔️ Component: Action Buttons
+Context: Buttons for player actions ("Attack", "Defend").
+Prompt (Attack - Sword):
+Rusty iron button shaped like a shield, embossed sword icon, blood splatter detail, heavy metal texture, isolated on black background
+Prompt (Magic - Spell):
+Glowing rune stone button, carved mystic symbol emitting blue light, cracked stone edge, magical aura, isolated on black background
+
+📜 Component: Text / Dialog Box
+Context: Background for narrative text.
+Prompt:
+Old tattered parchment scroll rolled open, burnt edges, bloodstain spot, dark wood table background, realistic texture, top down view, isolated on black background
+
+🎒 Component: Inventory Icons
+Context: Items in the bag.
+Prompt:
+- Health Potion: Small round flask with bubbling red liquid, cork stopper, rope tie.
+- Rusty Key: Ancient iron key with skull motif, oxidized rust texture.
+- Map Scroll: Rolled up yellow paper with wax seal.
+All styles: 32-bit pixel art or high-res pre-rendered RPG icon style, isolated on black background.

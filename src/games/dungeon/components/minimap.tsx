@@ -1,0 +1,117 @@
+'use client';
+
+import { useMemo } from 'react';
+import type { GameState } from '@/lib/game-types';
+
+interface MinimapProps {
+  state: GameState;
+}
+
+export function Minimap({ state }: MinimapProps) {
+  const { map, player, enemies, milestones } = state;
+  
+  const scale = 3;
+  const width = map.width * scale;
+  const height = map.height * scale;
+  
+  const floorTiles = useMemo(() => {
+    const tiles: { x: number; y: number }[] = [];
+    for (let y = 0; y < map.height; y++) {
+      for (let x = 0; x < map.width; x++) {
+        if (map.tiles[y][x].walkable) {
+          tiles.push({ x, y });
+        }
+      }
+    }
+    return tiles;
+  }, [map]);
+  
+  const playerPos = {
+    x: Math.floor(player.x / map.tileSize) * scale,
+    y: Math.floor(player.y / map.tileSize) * scale,
+  };
+  
+  return (
+    <div className="absolute top-4 right-4 z-20">
+      <div className="relative bg-card/80 backdrop-blur-sm border border-border rounded-lg p-2 shadow-lg">
+        <div className="text-[10px] font-mono text-muted-foreground mb-1 uppercase tracking-wider">
+          Map
+        </div>
+        <div
+          className="relative bg-background/50 rounded overflow-hidden"
+          style={{ width, height }}
+        >
+          {/* Floor tiles */}
+          {floorTiles.map((tile, i) => (
+            <div
+              key={i}
+              className="absolute bg-muted/40"
+              style={{
+                left: tile.x * scale,
+                top: tile.y * scale,
+                width: scale,
+                height: scale,
+              }}
+            />
+          ))}
+          
+          {/* Milestones */}
+          {milestones.map((milestone) => {
+            if (milestone.collected) return null;
+            const mX = Math.floor(milestone.x / map.tileSize) * scale;
+            const mY = Math.floor(milestone.y / map.tileSize) * scale;
+            return (
+              <div
+                key={milestone.id}
+                className={`absolute rounded-full ${
+                  milestone.type === 'portal' 
+                    ? 'bg-cyan-400 animate-pulse' 
+                    : 'bg-yellow-400'
+                }`}
+                style={{
+                  left: mX,
+                  top: mY,
+                  width: scale + 1,
+                  height: scale + 1,
+                }}
+              />
+            );
+          })}
+          
+          {/* Enemies */}
+          {enemies.map((enemy) => {
+            const eX = Math.floor(enemy.x / map.tileSize) * scale;
+            const eY = Math.floor(enemy.y / map.tileSize) * scale;
+            return (
+              <div
+                key={enemy.id}
+                className={`absolute rounded-full ${
+                  enemy.type === 'boss' 
+                    ? 'bg-red-500 w-2 h-2' 
+                    : 'bg-enemy'
+                }`}
+                style={{
+                  left: eX,
+                  top: eY,
+                  width: enemy.type === 'boss' ? scale * 2 : scale,
+                  height: enemy.type === 'boss' ? scale * 2 : scale,
+                }}
+              />
+            );
+          })}
+          
+          {/* Player */}
+          <div
+            className="absolute bg-health rounded-full animate-pulse"
+            style={{
+              left: playerPos.x - 1,
+              top: playerPos.y - 1,
+              width: scale + 2,
+              height: scale + 2,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
