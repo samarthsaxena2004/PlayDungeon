@@ -25,7 +25,7 @@ function createInitialState(level: number = 1): GameState {
     TILE_SIZE,
     level
   );
-  
+
   const player: Player = {
     id: 'player',
     x: spawnPoint.x,
@@ -40,7 +40,7 @@ function createInitialState(level: number = 1): GameState {
     speed: PLAYER_SPEED,
     lastDamageTime: 0,
   };
-  
+
   return {
     player,
     enemies,
@@ -85,6 +85,7 @@ function createInitialState(level: number = 1): GameState {
     gameStatus: 'playing',
     score: 0,
     level,
+    activeEvent: undefined,
   };
 }
 
@@ -108,7 +109,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'UPDATE_TICK': {
       if (state.gameStatus !== 'playing') return state;
-      
+
       const { deltaTime } = action;
       let newPlayer = { ...state.player };
       let newEnemies = [...state.enemies];
@@ -116,12 +117,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newStoryLog = [...state.storyLog];
       let newScore = state.score;
       const currentTime = Date.now();
-      
+
       // Update attack cooldown
       if (newPlayer.attackCooldown > 0) {
         newPlayer.attackCooldown = Math.max(0, newPlayer.attackCooldown - deltaTime);
       }
-      
+
       // Update fireballs
       newFireballs = newFireballs
         .map((fb) => ({
@@ -136,7 +137,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           if (!isWalkable(state.map, fb.x, fb.y, fb.width, fb.height)) return false;
           return true;
         });
-      
+
       // Check fireball-enemy collisions
       for (const fireball of newFireballs) {
         for (let i = 0; i < newEnemies.length; i++) {
@@ -147,7 +148,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             };
             // Remove fireball
             newFireballs = newFireballs.filter((fb) => fb.id !== fireball.id);
-            
+
             if (newEnemies[i].health <= 0) {
               newScore += newEnemies[i].type === 'boss' ? 500 : 100;
               newStoryLog.push({
@@ -161,28 +162,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
       }
-      
+
       // Remove dead enemies
       newEnemies = newEnemies.filter((e) => e.health > 0);
-      
+
       // Update enemy AI
       newEnemies = newEnemies.map((enemy) => {
         const dist = distance(enemy, newPlayer);
         const isAggro = dist < AGGRO_RANGE;
-        
+
         if (isAggro) {
           // Move towards player
           const dx = newPlayer.x - enemy.x;
           const dy = newPlayer.y - enemy.y;
           const len = Math.sqrt(dx * dx + dy * dy);
-          
+
           if (len > 0) {
             const moveX = (dx / len) * enemy.speed * deltaTime * 0.06;
             const moveY = (dy / len) * enemy.speed * deltaTime * 0.06;
-            
+
             const newX = enemy.x + moveX;
             const newY = enemy.y + moveY;
-            
+
             if (isWalkable(state.map, newX, enemy.y, enemy.width, enemy.height)) {
               enemy = { ...enemy, x: newX };
             }
@@ -190,7 +191,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               enemy = { ...enemy, y: newY };
             }
           }
-          
+
           // Attack player if close enough
           if (dist < TILE_SIZE && currentTime - enemy.lastAttackTime > enemy.attackCooldown) {
             newPlayer = {
@@ -199,7 +200,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               lastDamageTime: currentTime,
             };
             enemy = { ...enemy, lastAttackTime: currentTime };
-            
+
             newStoryLog.push({
               id: generateId(),
               text: `The ${enemy.type} strikes you for ${enemy.damage} damage!`,
@@ -208,10 +209,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             });
           }
         }
-        
+
         return { ...enemy, isAggro };
       });
-      
+
       // Update camera to follow player
       const targetCameraX = newPlayer.x - 400;
       const targetCameraY = newPlayer.y - 300;
@@ -219,7 +220,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         x: state.camera.x + (targetCameraX - state.camera.x) * 0.1,
         y: state.camera.y + (targetCameraY - state.camera.y) * 0.1,
       };
-      
+
       // Update quests
       const newQuests = state.currentQuests.map((quest) => {
         if (quest.id === 'defeat-enemies') {
@@ -232,7 +233,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         return quest;
       });
-      
+
       // Check game over
       if (newPlayer.health <= 0) {
         return {
@@ -250,7 +251,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ],
         };
       }
-      
+
       return {
         ...state,
         player: newPlayer,
@@ -262,15 +263,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         score: newScore,
       };
     }
-    
+
     case 'MOVE_PLAYER': {
       if (state.gameStatus !== 'playing') return state;
-      
+
       const { direction } = action;
       let newX = state.player.x;
       let newY = state.player.y;
       const speed = state.player.speed;
-      
+
       switch (direction) {
         case 'up':
           newY -= speed;
@@ -285,7 +286,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           newX += speed;
           break;
       }
-      
+
       // Check collision with walls
       if (!isWalkable(state.map, newX, newY, state.player.width, state.player.height)) {
         // Try sliding along walls
@@ -297,7 +298,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           return { ...state, player: { ...state.player, direction } };
         }
       }
-      
+
       return {
         ...state,
         player: {
@@ -308,15 +309,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       };
     }
-    
+
     case 'ATTACK': {
       if (state.gameStatus !== 'playing') return state;
       if (state.player.attackCooldown > 0) return state;
-      
+
       const { direction } = state.player;
       let vx = 0;
       let vy = 0;
-      
+
       switch (direction) {
         case 'up':
           vy = -FIREBALL_SPEED;
@@ -331,7 +332,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           vx = FIREBALL_SPEED;
           break;
       }
-      
+
       const fireball: Fireball = {
         id: generateId(),
         x: state.player.x + state.player.width / 2 - 8,
@@ -344,7 +345,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         lifetime: FIREBALL_LIFETIME,
         createdAt: Date.now(),
       };
-      
+
       return {
         ...state,
         player: {
@@ -355,31 +356,45 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         fireballs: [...state.fireballs, fireball],
       };
     }
-    
+
     case 'INTERACT': {
       if (state.gameStatus !== 'playing') return state;
-      
+
       const newMilestones = [...state.milestones];
       const newStoryLog = [...state.storyLog];
       let newQuests = [...state.currentQuests];
       let newLevel = state.level;
       let shouldAdvanceLevel = false;
-      
+      let triggeredEvent: GameState['activeEvent'] | undefined = undefined;
+      let gameStatus: GameState['gameStatus'] = state.gameStatus;
+
       for (let i = 0; i < newMilestones.length; i++) {
         const milestone = newMilestones[i];
         if (milestone.collected) continue;
-        
+
         const dist = distance(state.player, milestone);
         if (dist < milestone.interactionRadius) {
           newMilestones[i] = { ...milestone, collected: true };
-          
+
           newStoryLog.push({
             id: generateId(),
             text: milestone.storyTrigger,
             timestamp: Date.now(),
             type: milestone.type === 'portal' ? 'milestone' : 'discovery',
           });
-          
+
+          // Trigger active event for narrative interruption
+          if (milestone.type !== 'portal') {
+            triggeredEvent = {
+              type: 'milestone',
+              id: generateId(),
+              text: milestone.storyTrigger,
+              timestamp: Date.now(),
+              resolved: false,
+            };
+            gameStatus = 'paused';
+          }
+
           if (milestone.type === 'portal') {
             // Check if all enemies defeated
             if (state.enemies.length === 0) {
@@ -398,11 +413,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               newMilestones[i] = { ...milestone, collected: false };
             }
           }
-          
+
           break;
         }
       }
-      
+
       if (shouldAdvanceLevel) {
         // Generate new level
         const newState = createInitialState(newLevel);
@@ -420,15 +435,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ],
         };
       }
-      
+
       return {
         ...state,
         milestones: newMilestones,
         storyLog: newStoryLog.slice(-50),
         currentQuests: newQuests,
+        activeEvent: triggeredEvent,
+        gameStatus,
       };
     }
-    
+
+    case 'RESOLVE_EVENT': {
+      return {
+        ...state,
+        gameStatus: 'playing',
+        activeEvent: undefined,
+      };
+    }
+
     case 'ADD_STORY': {
       return {
         ...state,
@@ -442,18 +467,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ].slice(-50),
       };
     }
-    
+
     case 'RESET_GAME': {
       return createInitialState(1);
     }
-    
+
     case 'SET_GAME_STATUS': {
       return {
         ...state,
         gameStatus: action.status,
       };
     }
-    
+
     default:
       return state;
   }
@@ -471,28 +496,28 @@ export function useGameEngine() {
   });
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
-  
+
   const gameLoop = useCallback((timestamp: number) => {
     if (lastTimeRef.current === 0) {
       lastTimeRef.current = timestamp;
     }
-    
+
     const deltaTime = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
-    
+
     // Handle movement
     const controls = controlsRef.current;
     if (controls.up) dispatch({ type: 'MOVE_PLAYER', direction: 'up' });
     if (controls.down) dispatch({ type: 'MOVE_PLAYER', direction: 'down' });
     if (controls.left) dispatch({ type: 'MOVE_PLAYER', direction: 'left' });
     if (controls.right) dispatch({ type: 'MOVE_PLAYER', direction: 'right' });
-    
+
     // Update game state
     dispatch({ type: 'UPDATE_TICK', deltaTime });
-    
+
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, []);
-  
+
   const startGame = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -500,35 +525,35 @@ export function useGameEngine() {
     lastTimeRef.current = 0;
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
-  
+
   const stopGame = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
   }, []);
-  
+
   const setControl = useCallback((control: keyof Controls, value: boolean) => {
     controlsRef.current[control] = value;
   }, []);
-  
+
   const attack = useCallback(() => {
     dispatch({ type: 'ATTACK' });
   }, []);
-  
+
   const interact = useCallback(() => {
     dispatch({ type: 'INTERACT' });
   }, []);
-  
+
   const resetGame = useCallback(() => {
     dispatch({ type: 'RESET_GAME' });
     startGame();
   }, [startGame]);
-  
+
   const addStoryEntry = useCallback((entry: Omit<StoryEntry, 'id' | 'timestamp'>) => {
     dispatch({ type: 'ADD_STORY', entry });
   }, []);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -537,7 +562,11 @@ export function useGameEngine() {
       }
     };
   }, []);
-  
+
+  const resolveEvent = useCallback(() => {
+    dispatch({ type: 'RESOLVE_EVENT' } as any);
+  }, []);
+
   return {
     state,
     dispatch,
@@ -548,5 +577,6 @@ export function useGameEngine() {
     startGame,
     stopGame,
     addStoryEntry,
+    resolveEvent,
   };
 }

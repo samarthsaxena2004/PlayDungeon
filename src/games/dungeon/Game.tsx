@@ -34,7 +34,7 @@ const KEY_MAP: KeyMap = {
 };
 
 export default function GamePage() {
-    const { state, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry } = useGameEngine();
+    const { state, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry, resolveEvent } = useGameEngine();
     const [gameStarted, setGameStarted] = useState(false);
     const [showControls, setShowControls] = useState(false);
     const [isGeneratingStory, setIsGeneratingStory] = useState(false);
@@ -369,6 +369,8 @@ export default function GamePage() {
                             enemiesNearby: state.enemies.filter(e => e.isAggro).length,
                             currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
                         }}
+                        activeEvent={state.activeEvent}
+                        onResolve={resolveEvent}
                     />
 
                     {/* Game Over / Victory Screen */}

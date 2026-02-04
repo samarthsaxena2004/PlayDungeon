@@ -74,6 +74,13 @@ export interface GameState {
   gameStatus: 'playing' | 'paused' | 'gameover' | 'victory';
   score: number;
   level: number;
+  activeEvent?: {
+    type: 'milestone' | 'combat' | 'quest';
+    id: string;
+    text: string;
+    timestamp: number;
+    resolved: boolean;
+  };
 }
 
 export interface Quest {
@@ -114,4 +121,5 @@ export type GameAction =
   | { type: 'ADD_STORY'; entry: Omit<StoryEntry, 'id' | 'timestamp'> }
   | { type: 'COMPLETE_QUEST'; questId: string }
   | { type: 'RESET_GAME' }
+  | { type: 'RESOLVE_EVENT' }
   | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] };

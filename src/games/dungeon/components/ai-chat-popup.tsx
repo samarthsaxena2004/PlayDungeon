@@ -1,6 +1,11 @@
 'use client';
 
-import React from "react"
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTambo } from "@tambo-ai/react";
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, X, Send, Mic, MicOff, Loader2, GripVertical, Minimize2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
 // Native SpeechRecognition types
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -29,20 +34,7 @@ declare global {
   }
 }
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Mic, MicOff, Loader2, GripVertical, Minimize2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-interface AIChatPopupProps {
-  gameContext: {
-    health: number;
-    level: number;
-    enemiesNearby: number;
-    currentQuest: string;
-  };
-  onSuggestion?: (action: string) => void;
-}
 
 interface ChatMessage {
   id: string;
@@ -61,19 +53,55 @@ interface Size {
   height: number;
 }
 
-export function AIChatPopup({ gameContext, onSuggestion }: AIChatPopupProps) {
+interface AIChatPopupProps {
+  gameContext: {
+    health: number;
+    level: number;
+    enemiesNearby: number;
+    currentQuest: string;
+  };
+  activeEvent?: {
+    id: string;
+    text: string;
+    type: string;
+  };
+  onResolve?: () => void;
+  onSuggestion?: (action: string) => void;
+}
+
+export function AIChatPopup({ gameContext, onSuggestion, activeEvent, onResolve }: AIChatPopupProps) {
+  // Cast to any to avoid TS errors while correctly integrating assuming standard SDK shape
+  const tambo = useTambo() as any;
+  const { messages: tamboMessages, send, isThinking } = tambo;
+
+  // Debug Tambo API surface
+  useEffect(() => {
+    console.log('[Tambo Debug] Context Object:', tambo);
+  }, [tambo]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
+
+  // Map Tambo messages to display format
+  const messages = tamboMessages ? tamboMessages.map((msg: any) => ({
+    id: msg.id || `msg-${Date.now()}-${Math.random()}`,
+    role: msg.role === 'model' ? 'assistant' : msg.role,
+    content: msg.content,
+    timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
+  })) : [];
+
+  // Add welcome message if empty
+  if (messages.length === 0) {
+    messages.push({
       id: 'welcome',
       role: 'assistant',
       content: 'Greetings, adventurer! I am your dungeon guide. Ask me anything about the game or request strategic advice!',
       timestamp: Date.now(),
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
+    });
+  }
+
+  const isLoading = isThinking;
   const [isListening, setIsListening] = useState(false);
   const [hasSpeechRecognition, setHasSpeechRecognition] = useState(false);
 
@@ -176,6 +204,11 @@ export function AIChatPopup({ gameContext, onSuggestion }: AIChatPopupProps) {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
           setIsListening(false);
+          // Auto-submit voice command
+          if (transcript.trim()) {
+            send({ role: 'user', content: transcript });
+            setInput('');
+          }
         };
 
         recognitionRef.current.onerror = () => {
@@ -188,6 +221,41 @@ export function AIChatPopup({ gameContext, onSuggestion }: AIChatPopupProps) {
       }
     }
   }, []);
+
+  // Handle active events
+  useEffect(() => {
+    if (activeEvent?.id) {
+      setIsOpen(true);
+      // Send automatic prompt to AI with context
+      const contextStr = `
+Game Context:
+- Health: ${gameContext.health}
+- Level: ${gameContext.level}
+- Enemies: ${gameContext.enemiesNearby}
+- Quest: ${gameContext.currentQuest}`;
+
+      const prompt = `I just encountered: "${activeEvent.text}". Describe what happens next in a dramatic dnd style. ${contextStr}`;
+
+      // We check if we already sent this valid activeEvent to avoid loops, 
+      // but activeEvent.id change ensures uniqueness.
+      send({
+        role: 'user',
+        content: prompt
+      });
+
+      // Optionally resolve immediately or wait for user action?
+      // For now, let's keep it open. The user can close it.
+    }
+  }, [activeEvent?.id, send]);
+
+  // Resolve event when closing chat if activeEvent is present?
+  // Or maybe provide a "Continue" button in the chat?
+  // Let's add a cleanup on close for now
+  useEffect(() => {
+    if (!isOpen && activeEvent && onResolve) {
+      onResolve();
+    }
+  }, [isOpen, activeEvent, onResolve]);
 
   const toggleVoice = () => {
     if (!recognitionRef.current) return;
@@ -204,55 +272,16 @@ export function AIChatPopup({ gameContext, onSuggestion }: AIChatPopupProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: input.trim(),
-      timestamp: Date.now(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const text = input.trim();
     setInput('');
-    setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage.content,
-          gameContext,
-        }),
+      const contextStr = `[Context: HP=${gameContext.health}, Lvl=${gameContext.level}, Enemies=${gameContext.enemiesNearby}]`;
+      await send({
+        content: `${text} ${contextStr}`,
       });
-
-      if (response.ok) {
-        const { reply, suggestedAction } = await response.json();
-
-        const assistantMessage: ChatMessage = {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: reply,
-          timestamp: Date.now(),
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
-
-        if (suggestedAction && onSuggestion) {
-          onSuggestion(suggestedAction);
-        }
-      } else {
-        throw new Error('Failed to get response');
-      }
-    } catch {
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: 'The magical connection seems unstable. Try again in a moment.',
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Tambo send error:", error);
     }
   };
 
@@ -344,7 +373,7 @@ export function AIChatPopup({ gameContext, onSuggestion }: AIChatPopupProps) {
                   className="flex-1 overflow-y-auto p-3 space-y-2.5"
                   style={{ maxHeight: size.height - 140 }}
                 >
-                  {messages.map((msg) => (
+                  {messages.map((msg: ChatMessage) => (
                     <div
                       key={msg.id}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
