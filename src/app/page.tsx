@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import VoiceInput from "@/components/VoiceInput";
 import { useClickSound } from "@/components/useClickSound";
 import { useTambo } from "@tambo-ai/react";
-
 import Ambient from "@/components/Ambient";
 
 // Import registry to manually render nodes
-import { tamboComponents } from "@/tambo/registry";
+import { tamboComponents, tamboComponentMap } from "@/tambo/registry";
 
 type GameState = {
   health: number;
@@ -68,18 +67,9 @@ export default function Home() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // ─── GENERIC NODE RENDERER (FIXED) ─────────────────────
+// ─── GENERIC NODE RENDERER (STABLE) ─────────────────────
 function renderNode(node: any, key: number) {
-  const map: Record<string, any> = {
-    DungeonCanvas: tamboComponents.find((c: any) => c.name === "DungeonCanvas"),
-    StoryText: tamboComponents.find((c: any) => c.name === "StoryText"),
-    ChoiceButtons: tamboComponents.find((c: any) => c.name === "ChoiceButtons"),
-    PlayerStatus: tamboComponents.find((c: any) => c.name === "PlayerStatus"),
-    InventoryPanel: tamboComponents.find((c: any) => c.name === "InventoryPanel"),
-    CombatHUD: tamboComponents.find((c: any) => c.name === "CombatHUD"),
-  };
-
-  const Comp = map[node.component];
+  const Comp = tamboComponentMap[node.component];
 
   if (!Comp) {
     return (
