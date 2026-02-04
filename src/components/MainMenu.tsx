@@ -33,7 +33,7 @@ export function MainMenu() {
             icon: Gamepad2,
             color: "from-purple-900 to-black",
             border: "border-purple-500",
-            playable: false,
+            playable: true,
         },
         {
             id: "piggy",
@@ -42,7 +42,7 @@ export function MainMenu() {
             icon: Ghost,
             color: "from-green-900 to-black",
             border: "border-green-500",
-            playable: false,
+            playable: true,
         },
     ];
 

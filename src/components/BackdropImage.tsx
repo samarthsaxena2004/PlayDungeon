@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { z } from "zod";
+import { getAssetPath } from "@/lib/assets";
 
 type Props = {
     url?: string;
@@ -9,18 +10,14 @@ type Props = {
 };
 
 export function BackdropImage({ url, alt }: Props) {
-    // If no URL provided, we might fallback or just show a colored overlay
-    // for now, we assume the AI might send a placeholder or we map keywords to local files
-    let imageSrc = url;
+    // If no URL provided, try to resolve from our local asset registry based on the description (alt)
+    let imageSrc = url || getAssetPath(alt);
 
-    // Quick mapping for demo purposes if the AI just sends keywords
-    if (!url) {
-        if (alt.toLowerCase().includes("maze")) imageSrc = "/maze_bg.webp";
-        else if (alt.toLowerCase().includes("dungeon")) imageSrc = "/dungeon_bg.webp";
-        else if (alt.toLowerCase().includes("city")) imageSrc = "/city_bg.webp";
-    }
+    // console.log("BackdropImage rendering:", { alt, imageSrc });
 
     if (!imageSrc) return null;
+
+    const isVideo = imageSrc.endsWith(".mp4") || imageSrc.endsWith(".webm");
 
     return (
         <motion.div
@@ -30,11 +27,24 @@ export function BackdropImage({ url, alt }: Props) {
             transition={{ duration: 1 }}
             className="absolute inset-0 z-0 pointer-events-none"
         >
-            <img
-                src={imageSrc}
-                alt={alt}
-                className="w-full h-full object-cover mix-blend-overlay"
-            />
+            {isVideo ? (
+                <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover mix-blend-overlay"
+                >
+                    <source src={imageSrc} type="video/mp4" />
+                </video>
+            ) : (
+                <img
+                    src={imageSrc}
+                    alt={alt}
+                    className="w-full h-full object-cover mix-blend-overlay"
+                />
+            )}
+
             {/* Gradient overlay to ensure text legibility */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-[#050505]/80 to-transparent" />
         </motion.div>

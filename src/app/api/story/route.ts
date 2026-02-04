@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import Groq from "groq-sdk";
 import { dungeonHandler } from "@/lib/games/dungeon";
 import { mazeHandler } from "@/lib/games/maze";
+import { pigeonHandler } from "@/lib/games/pigeon";
+import { piggyHandler } from "@/lib/games/piggy";
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -19,6 +21,12 @@ export async function POST(req: NextRequest) {
         break;
       case 'maze':
         responseData = await mazeHandler(client, action, state);
+        break;
+      case 'pigeon':
+        responseData = await pigeonHandler(client, action, state);
+        break;
+      case 'piggy':
+        responseData = await piggyHandler(client, action, state);
         break;
       default:
         // Fallback or Error

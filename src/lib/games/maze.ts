@@ -12,7 +12,7 @@ OUTPUT JSON ONLY. Structure:
 }
 
 AVAILABLE COMPONENTS:
-- BackdropImage { alt: string } (Use 'maze' to show the visual maze background)
+- BackdropImage { alt: "maze" } (ALWAYS USE THIS with alt='maze' for the background)
 - StoryText { text: string } (Use for clues)
 - ChoiceButtons { choices: [{id, text}] } (Navigation: North, South, East, West)
 
