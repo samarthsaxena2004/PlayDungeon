@@ -8,6 +8,7 @@ export type GameState = {
     danger: number;
     lastEvent: string;
     turn: number;
+    mood?: string;
   };
 
   combat?: {

@@ -9,7 +9,7 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <TamboProvider components={tamboComponents}>
+    <TamboProvider components={tamboComponents as any} apiKey={process.env.NEXT_PUBLIC_TAMBO_KEY || "dummy"}>
       {children}
     </TamboProvider>
   );
