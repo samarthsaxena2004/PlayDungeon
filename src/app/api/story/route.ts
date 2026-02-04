@@ -10,32 +10,42 @@ function roll(min: number, max: number) {
 }
 
 const SYSTEM = `
-YOU ARE PLAYDUNGEON COMBAT ENGINE.
+YOU ARE A DUNGEON MASTER AI.
+Your goal is to drive a SPLIT-SCREEN RPG.
 
-MECHANICS:
-- Damage 5–18
-- Crit 10% → +8 dmg
-- Mana skills cost 8–14
-- Enemies 25–60 hp
-- Loot tiers: scrap / iron / arcane
-- Danger 0–100
+OUTPUT JSON ONLY. Structure:
+{
+  "narrative": "The text that appears in the chat log (1-2 sentences max).",
+  "ui": [ ... array of component nodes to show on the canvas ... ],
+  "state": { ... game state updates ... },
+  "meta": { "location": "...", "dangerLevel": 0-100, "mood": "..." }
+}
 
-AVAILABLE UI:
-DungeonCanvas, StoryText, ChoiceButtons,
-PlayerStatus, InventoryPanel,
-CombatHUD, CombatLog, SkillBar, DeathScreen
+AVAILABLE COMPONENTS (for "ui"):
+- DungeonCanvas { location: string }
+- ChoiceButtons { choices: [{id, text}] }
+- PlayerStatus { health, mana, maxHealth, maxMana }
+- InventoryPanel { inventory: [] }
+- CombatHUD { enemy, hp, maxHp, status }
+- StoryText (Use sparingly, prefer 'narrative' field for text)
 
 RULES:
-- Start with DungeonCanvas
-- If health ≤ 0 → ONLY DeathScreen
-- If in combat → include CombatHUD + SkillBar
-- Max 5 components
-- Always ChoiceButtons unless dead
+1. "narrative" is for the scrolling chat. It should be atmospheric.
+2. "ui" replaces the ENTIRE canvas content. Always return the full scene you want visible.
+3. If entering combat, include CombatHUD.
+4. If exploring, always include DungeonCanvas as the background.
+5. Always provide ChoiceButtons at the end of the UI list.
 
-RETURN ONLY JSON:
+EXAMPLE:
 {
-  ui: [],
-  state: {}
+  "narrative": "A goblin leaps from the shadows!",
+  "ui": [
+    { "component": "DungeonCanvas", "props": { "location": "Dark Tunnel" } },
+    { "component": "CombatHUD", "props": { "enemy": "Goblin Scavenger", "hp": 30, "maxHp": 30 } },
+    { "component": "ChoiceButtons", "props": { "choices": [{ "id": "atk", "text": "Attack" }] } }
+  ],
+  "state": { "health": 95 },
+  "meta": { "location": "Dark Tunnel", "dangerLevel": 80, "mood": "tense" }
 }
 `;
 
@@ -43,123 +53,59 @@ export async function POST(req: NextRequest) {
   const { action, state } = await req.json();
 
   let s = { ...state };
+  let prompt = `Action: ${action}\nCurrent State: ${JSON.stringify(s)}`;
 
-  // ─── TURN LOGIC ──────────────────────────────
-  s.meta = s.meta || { danger: 20, lastEvent: "", turn: 0 };
-  s.meta.turn++;
-
-  // Combat simulation
-  const log: string[] = [];
-
-  if (action === "strike" && s.combat) {
-    let dmg = roll(5, 18);
-    if (Math.random() < 0.1) dmg += 8;
-
-    s.combat.hp -= dmg;
-    log.push(`You strike for ${dmg}`);
-
-    if (s.combat.hp <= 0) {
-      log.push(`${s.combat.enemy} slain`);
-      s.inventory.push("iron scrap");
-      delete s.combat;
-      s.meta.danger -= 15;
-    }
-  }
-
-  if (action === "spark" && s.mana >= 10) {
-    s.mana -= 10;
-    const dmg = roll(10, 20);
-    if (s.combat) {
-      s.combat.hp -= dmg;
-      log.push(`Spark burns for ${dmg}`);
-    }
-  }
-
-  // Enemy turn
-  if (s.combat) {
-    const edmg = roll(4, 12);
-    s.health -= edmg;
-    log.push(`${s.combat.enemy} hits ${edmg}`);
-  }
-
-  // Death
-  if (s.health <= 0) {
-    return Response.json({
-      ui: [
-        {
-          component: "DeathScreen",
-          props: { reason: s.meta.lastEvent || "Blood loss" }
-        }
-      ],
-      state: s,
-    });
-  }
-
-  // ─── AI DIRECTOR ─────────────────────────────
+  // ─── HARD CODED COMBAT MECHANICS (OPTIONAL HYBRID) ────────
+  // We can still inject deterministic logic here if needed, but for now 
+  // we will trust the AI to hallucinate the initial state, 
+  // and we can sanitize it or apply rules in a middleware layer later.
 
   try {
     const completion = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      temperature: 0.88,
+      temperature: 0.7,
+      stop: ["\n\n"], // Prevent markdown runoff
       messages: [
         { role: "system", content: SYSTEM },
-        {
-          role: "user",
-          content: JSON.stringify({ action, state: s, log }),
-        },
+        { role: "user", content: prompt },
       ],
     });
 
     const raw = completion.choices[0].message.content!;
+    console.log("AI RAW:", raw);
 
     let parsed;
     try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      parsed = m ? JSON.parse(m[0]) : null;
+      // Attempt to clean markdown code blocks if present
+      const clean = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      console.error("JSON PARSE ERROR", e);
+      throw new Error("Failed to parse AI response");
     }
 
-    if (!parsed?.ui) throw new Error();
+    // Merge state updates
+    const finalState = { ...s, ...parsed.state };
 
-    // inject log + skills when in combat
-    if (s.combat) {
-      parsed.ui.push({
-        component: "CombatLog",
-        props: { lines: log }
-      });
+    // Ensure meta is preserved if not returned
+    const finalMeta = parsed.meta || s.meta;
 
-      parsed.ui.push({
-        component: "SkillBar",
-        props: { mana: s.mana }
-      });
-    }
-
-    parsed.state = s;
-    return Response.json(parsed);
-
-  } catch {
     return Response.json({
+      narrative: parsed.narrative,
+      ui: parsed.ui || [],
+      state: finalState,
+      meta: finalMeta
+    });
+
+  } catch (err) {
+    console.error("API ERROR:", err);
+    return Response.json({
+      narrative: "The connection to the dungeon wavers... (AI Error)",
       ui: [
-        {
-          component: "DungeonCanvas",
-          props: { location: s.location }
-        },
-        {
-          component: "StoryText",
-          props: { text: "The dungeon hesitates..." }
-        },
-        {
-          component: "ChoiceButtons",
-          props: {
-            choices: [
-              { id: "strike", text: "Strike" },
-              { id: "focus", text: "Focus" }
-            ]
-          }
-        }
+        { component: "DungeonCanvas", props: { location: "Void" } },
+        { component: "ChoiceButtons", props: { choices: [{ id: "retry", text: "Try Again" }] } }
       ],
       state: s,
-    });
+    }, { status: 500 });
   }
 }

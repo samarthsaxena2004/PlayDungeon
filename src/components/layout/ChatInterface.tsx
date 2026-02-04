@@ -5,7 +5,7 @@ import { useGameStore } from "@/game/store";
 import VoiceInput from "@/components/VoiceInput";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function ChatInterface() {
+export function ChatInterface({ onAction }: { onAction: (text: string) => void }) {
     const messages = useGameStore((s) => s.messages);
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -19,11 +19,9 @@ export function ChatInterface() {
     const addMessage = useGameStore((s) => s.addMessage);
 
     const handleCommand = (text: string) => {
-        addMessage({ role: 'user', content: text });
-        // In the future: trigger API here
+        // We let the parent handle the API trigger
+        onAction(text);
     };
-    // Note: Actual API trigger will happen in page.tsx for now to keep logic central
-    // but we can dispatch actions here later.
 
     return (
         <div className="flex flex-col h-full bg-black/40 border-r border-[#333]">

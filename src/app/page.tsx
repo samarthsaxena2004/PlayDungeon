@@ -26,27 +26,51 @@ export default function Home() {
     playClick();
     setThinking(true);
 
-    // Optimistic UI update
+    // 1. Optimistic Update
     addMessage({ role: "user", content: action });
 
     try {
-      // Mock API latency
-      await new Promise(r => setTimeout(r, 1200));
+      const currentState = useGameStore.getState();
 
-      // Mock Response (Replace with real API call later)
-      addMessage({ role: "assistant", content: `You ${action}. The dungeon echoes with your movement.` });
+      const res = await fetch("/api/story", {
+        method: "POST",
+        body: JSON.stringify({
+          action,
+          state: {
+            stats: currentState.stats,
+            inventory: currentState.inventory,
+            meta: currentState.meta
+          }
+        }),
+      });
 
-      // Mock Scene Update
-      setScene([
-        { component: "DungeonCanvas", props: { location: "Deeper Hallway" } },
-        { component: "StoryText", props: { text: `You move forward. The shadows lengthen. Danger increases.` } },
-        { component: "ChoiceButtons", props: { choices: [{ id: "atk", text: "Draw Weapon" }, { id: "hide", text: "Hide" }] } }
-      ]);
+      if (!res.ok) throw new Error("API Failed");
 
-      updateMeta({ dangerLevel: Math.min(meta.dangerLevel + 10, 100) });
+      const data = await res.json();
+
+      // 2. Handle Response
+      if (data.narrative) {
+        addMessage({ role: "assistant", content: data.narrative });
+      }
+
+      if (data.ui) {
+        setScene(data.ui);
+      }
+
+      if (data.state) {
+        // Merge returned state into our store
+        if (data.state.stats) updateStats(data.state.stats);
+        if (data.state.inventory) currentState.inventory = data.state.inventory; // Direct mutation warning: better to have setInventory
+        if (data.state.meta) updateMeta(data.state.meta);
+      }
+
+      if (data.meta) {
+        updateMeta(data.meta);
+      }
 
     } catch (err) {
       console.error(err);
+      addMessage({ role: "system", content: "The connection to the ethereal plane was lost." });
     } finally {
       setThinking(false);
     }
@@ -69,7 +93,7 @@ export default function Home() {
 
       {/* ─── LEFT PANEL: CHAT & NARRATIVE ────────── */}
       <section className="w-[400px] flex-shrink-0 relative z-20 shadow-2xl">
-        <ChatInterface />
+        <ChatInterface onAction={handleAction} />
       </section>
 
       {/* ─── RIGHT PANEL: GENERATIVE CANVAS ──────── */}
