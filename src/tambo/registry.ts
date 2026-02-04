@@ -5,9 +5,13 @@ import { InventoryPanel } from "@/components/InventoryPanel";
 import { DungeonCanvas } from "@/components/DungeonCanvas";
 import { CombatHUD } from "@/components/CombatHUD";
 
-import { CombatLog } from "@/components/CombatLog";
-import { SkillBar } from "@/components/SkillBar";
-import { DeathScreen } from "@/components/DeathScreen";
+// Force stable names
+(StoryText as any).name = "StoryText";
+(ChoiceButtons as any).name = "ChoiceButtons";
+(PlayerStatus as any).name = "PlayerStatus";
+(InventoryPanel as any).name = "InventoryPanel";
+(DungeonCanvas as any).name = "DungeonCanvas";
+(CombatHUD as any).name = "CombatHUD";
 
 export const tamboComponents = [
   StoryText,
@@ -16,8 +20,4 @@ export const tamboComponents = [
   InventoryPanel,
   DungeonCanvas,
   CombatHUD,
-
-  CombatLog,
-  SkillBar,
-  DeathScreen,
 ];

@@ -68,22 +68,29 @@ export default function Home() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // ─── GENERIC NODE RENDERER ─────────────────────
-  function renderNode(node: any, key: number) {
-    const Comp = (tamboComponents as any[]).find(
-      (c: any) => c.name === node.component
+  // ─── GENERIC NODE RENDERER (FIXED) ─────────────────────
+function renderNode(node: any, key: number) {
+  const map: Record<string, any> = {
+    DungeonCanvas: tamboComponents.find((c: any) => c.name === "DungeonCanvas"),
+    StoryText: tamboComponents.find((c: any) => c.name === "StoryText"),
+    ChoiceButtons: tamboComponents.find((c: any) => c.name === "ChoiceButtons"),
+    PlayerStatus: tamboComponents.find((c: any) => c.name === "PlayerStatus"),
+    InventoryPanel: tamboComponents.find((c: any) => c.name === "InventoryPanel"),
+    CombatHUD: tamboComponents.find((c: any) => c.name === "CombatHUD"),
+  };
+
+  const Comp = map[node.component];
+
+  if (!Comp) {
+    return (
+      <div key={key} className="border border-red-500 p-2 text-red-400">
+        Missing component: {node.component}
+      </div>
     );
-
-    if (!Comp) {
-      return (
-        <div key={key} className="border border-red-500 p-2">
-          Missing component: {node.component}
-        </div>
-      );
-    }
-
-    return <Comp key={key} {...node.props} />;
   }
+
+  return <Comp key={key} {...node.props} />;
+}
 
   // ─── CALL AI (TAMBO MODE) ──────────────────────
   async function callAI(action: string) {
