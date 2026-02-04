@@ -10,10 +10,15 @@ export function GenerativeCanvas() {
     // ─── 1. EXTRACT KEY COMPONENTS ───
     // We remove them from the generic "flow" list so we can place them explicitly
     const bgNode = activeScene.find(n => n.component === "DungeonCanvas");
+    const imgNode = activeScene.find(n => n.component === "BackdropImage");
     const heroNode = activeScene.find(n => n.component === "HeroCard");
 
     // The rest stay in the flow (Enemies, StoryText, Choices, etc.)
-    const flowNodes = activeScene.filter(n => n.component !== "DungeonCanvas" && n.component !== "HeroCard");
+    const flowNodes = activeScene.filter(n =>
+        n.component !== "DungeonCanvas" &&
+        n.component !== "HeroCard" &&
+        n.component !== "BackdropImage"
+    );
 
     // Determine mode based on if an enemy is present
     const isCombat = flowNodes.some(n => n.component === "EnemyDisplay" || n.component === "CombatHUD");
@@ -22,9 +27,18 @@ export function GenerativeCanvas() {
     return (
         <div className="relative h-full flex flex-col p-4 bg-[#050505] overflow-hidden">
 
-            {/* ─── LAYER 0: DUNGEON BACKGROUND ──────────────── */}
+            {/* ─── LAYER 0: BACKGROUND ──────────────────────── */}
             <div className="absolute inset-4 rounded-xl overflow-hidden border border-[#222] z-0">
-                {bgNode ? (
+
+                {/* Priority: Backdrop Image > Dungeon Canvas > Color Fallback */}
+                {imgNode ? (
+                    <div className="w-full h-full">
+                        {(() => {
+                            const Comp = tamboComponentMap[imgNode.component];
+                            return Comp ? <Comp {...imgNode.props} /> : null;
+                        })()}
+                    </div>
+                ) : bgNode ? (
                     // Render DungeonCanvas as full background
                     <div className="w-full h-full opacity-60">
                         {(() => {

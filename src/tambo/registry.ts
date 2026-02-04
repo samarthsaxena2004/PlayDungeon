@@ -6,6 +6,7 @@ import { DungeonCanvas } from "@/components/DungeonCanvas";
 import { CombatHUD } from "@/components/CombatHUD";
 import { HeroCard } from "@/components/HeroCard";
 import { EnemyDisplay } from "@/components/EnemyDisplay";
+import { BackdropImage } from "@/components/BackdropImage";
 
 // ─── ATTACH METADATA ───────────────────────────────
 
@@ -17,6 +18,7 @@ import { EnemyDisplay } from "@/components/EnemyDisplay";
 (CombatHUD as any).tambo = { name: "CombatHUD", description: "Combat interface" };
 (HeroCard as any).tambo = { name: "HeroCard", description: "Flashy hero status card" };
 (EnemyDisplay as any).tambo = { name: "EnemyDisplay", description: "Flashy enemy boss card" };
+(BackdropImage as any).tambo = { name: "BackdropImage", description: "Cinematic background image" };
 
 
 // ─── EXPLICIT MAP (NO .name HACK) ─────────────────────
@@ -30,6 +32,7 @@ export const tamboComponentMap: Record<string, any> = {
   CombatHUD,
   HeroCard,
   EnemyDisplay,
+  BackdropImage,
 };
 
 // Legacy array still used by provider
@@ -42,4 +45,5 @@ export const tamboComponents = [
   CombatHUD,
   HeroCard,
   EnemyDisplay,
+  BackdropImage,
 ];

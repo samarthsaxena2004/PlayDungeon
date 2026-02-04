@@ -12,7 +12,7 @@ OUTPUT JSON ONLY. Structure:
 }
 
 AVAILABLE COMPONENTS:
-- DungeonCanvas { location: string } (Use 'Neon Grid' or 'Cyber Hall')
+- BackdropImage { alt: string } (Use 'maze' to show the visual maze background)
 - StoryText { text: string } (Use for clues)
 - ChoiceButtons { choices: [{id, text}] } (Navigation: North, South, East, West)
 
@@ -34,26 +34,26 @@ EXAMPLE:
 `;
 
 export async function mazeHandler(client: Groq, action: string, state: any) {
-    let s = { ...state };
-    let prompt = `Action: ${action}\nCurrent Maze State: ${JSON.stringify(s.meta)}`;
+  let s = { ...state };
+  let prompt = `Action: ${action}\nCurrent Maze State: ${JSON.stringify(s.meta)}`;
 
-    const completion = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.9,
-        messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: prompt },
-        ],
-    });
+  const completion = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.9,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+  });
 
-    const raw = completion.choices[0].message.content!;
-    const clean = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(clean);
+  const raw = completion.choices[0].message.content!;
+  const clean = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+  const parsed = JSON.parse(clean);
 
-    return {
-        narrative: parsed.narrative,
-        ui: parsed.ui || [],
-        state: s, // Maze might not update stats much
-        meta: parsed.meta || s.meta
-    };
+  return {
+    narrative: parsed.narrative,
+    ui: parsed.ui || [],
+    state: s, // Maze might not update stats much
+    meta: parsed.meta || s.meta
+  };
 }
