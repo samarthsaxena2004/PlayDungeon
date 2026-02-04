@@ -24,17 +24,18 @@ OUTPUT JSON ONLY. Structure:
 AVAILABLE COMPONENTS (for "ui"):
 - DungeonCanvas { location: string }
 - ChoiceButtons { choices: [{id, text}] }
-- PlayerStatus { health, mana, maxHealth, maxMana }
+- HeroCard { health, maxHealth, mana, maxMana } (ALWAYS USE THIS for player stats)
+- EnemyDisplay { name: string, hp, maxHp, status } (Use this for enemies/combat)
 - InventoryPanel { inventory: [] }
-- CombatHUD { enemy, hp, maxHp, status }
 - StoryText (Use sparingly, prefer 'narrative' field for text)
 
 RULES:
 1. "narrative" is for the scrolling chat. It should be atmospheric.
 2. "ui" replaces the ENTIRE canvas content. Always return the full scene you want visible.
-3. If entering combat, include CombatHUD.
-4. If exploring, always include DungeonCanvas as the background.
-5. Always provide ChoiceButtons at the end of the UI list.
+3. START EVERY SCENE with HeroCard (unless dead).
+4. If in combat, use EnemyDisplay.
+5. If exploring, always include DungeonCanvas as the background.
+6. Always provide ChoiceButtons at the end of the UI list.
 
 EXAMPLE:
 {
