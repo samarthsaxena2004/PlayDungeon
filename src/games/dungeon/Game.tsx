@@ -369,6 +369,17 @@ export default function GamePage() {
                             enemiesNearby: state.enemies.filter(e => e.isAggro).length,
                             currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
                         }}
+                        onSuggestion={(action: string) => {
+                            console.log('AI Suggested Action:', action);
+                            switch (action) {
+                                case 'ATTACK': attack(); break;
+                                case 'INTERACT': interact(); break;
+                                case 'MOVE_UP': setControl('up', true); setTimeout(() => setControl('up', false), 200); break;
+                                case 'MOVE_DOWN': setControl('down', true); setTimeout(() => setControl('down', false), 200); break;
+                                case 'MOVE_LEFT': setControl('left', true); setTimeout(() => setControl('left', false), 200); break;
+                                case 'MOVE_RIGHT': setControl('right', true); setTimeout(() => setControl('right', false), 200); break;
+                            }
+                        }}
                         activeEvent={state.activeEvent}
                         onResolve={resolveEvent}
                     />
