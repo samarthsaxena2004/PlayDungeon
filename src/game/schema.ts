@@ -1,35 +1,23 @@
-// ─── CORE STATE ───────────────────────────────────────────
-
 export type GameState = {
   health: number;
   mana: number;
   inventory: string[];
   location: string;
 
-  meta?: {
-    danger: number;        // 0–100
-    mood: string;          // dread / hope / tense / calm
+  meta: {
+    danger: number;
     lastEvent: string;
-    audio?: string;        // hint for ambience
+    turn: number;
+  };
+
+  combat?: {
+    enemy: string;
+    hp: number;
+    intent: string;
   };
 };
 
-// ─── TAMBO UI CONTRACT ────────────────────────────────────
-
-export type TamboNode = {
-  component: string;
-  props: Record<string, any>;
-};
-
-export type TamboScreen = {
-  ui: TamboNode[];
+export type StoryResponse = {
+  ui: any[];
   state: GameState;
-};
-
-// ─── DIRECTOR MEMORY ──────────────────────────────────────
-
-export type WorldMemory = {
-  visited: string[];
-  threats: Record<string, number>;
-  inventoryLore: Record<string, string>;
 };
