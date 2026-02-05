@@ -1,60 +1,49 @@
-// Fallback story snippets when AI is unavailable
-const STORY_TEMPLATES = {
-  enter: [
-    'You descend into the ancient depths. The air grows cold and heavy with forgotten memories.',
-    'The dungeon entrance looms before you. Shadows dance at the edge of your torchlight.',
-    'Stone walls echo with your footsteps. Something stirs in the darkness ahead.',
-  ],
-  lowHealth: [
-    'Your wounds burn with each step. The darkness seems to press closer...',
-    'Blood drips from your injuries. You must find safety before it is too late.',
-    'Your vision blurs at the edges. The dungeon senses your weakness.',
-  ],
-  combat: [
-    'Steel meets shadow as you battle the dungeon\'s guardians.',
-    'Your fireballs illuminate the ancient halls, revealing more horrors.',
-    'The creatures fall, but more lurk in the shadows beyond.',
-  ],
-  allEnemiesDefeated: [
-    'Silence falls. The last echo of battle fades into the stone walls.',
-    'Victory! But the dungeon has many more secrets to reveal...',
-    'The guardians are vanquished. A path opens before you.',
-  ],
-  default: [
-    'The dungeon whispers secrets in a language long forgotten.',
-    'Ancient runes glow faintly on the walls, marking your passage.',
-    'Somewhere in the depths, something awaits your arrival.',
-    'The torch flickers. Was that movement in the shadows?',
-  ],
-};
+import Groq from "groq-sdk";
 
-function getStorySnippet(context: string, health: number): string {
-  let category = 'default';
-  
-  if (context.toLowerCase().includes('enters') || context.toLowerCase().includes('enter')) {
-    category = 'enter';
-  } else if (health < 30) {
-    category = 'lowHealth';
-  } else if (context.toLowerCase().includes('defeated') || context.toLowerCase().includes('enemies')) {
-    category = context.toLowerCase().includes('all') ? 'allEnemiesDefeated' : 'combat';
-  }
-  
-  const templates = STORY_TEMPLATES[category as keyof typeof STORY_TEMPLATES];
-  return templates[Math.floor(Math.random() * templates.length)];
-}
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export async function POST(req: Request) {
   try {
-    const { context, health } = await req.json();
+    const { context, health, recentEvents, level, playerName } = await req.json();
+
+    const systemPrompt = `You are the Dungeon Master (DM) for a dark fantasy RPG called 'Deep Dungeon'. 
+    The player${playerName ? ` named ${playerName}` : ''} is exploring a procedurally generated dungeon.
+    Your goal is to provide a brief, atmospheric, and immersive narration based on the game events.
+    Keep it short (1-2 sentences). Be descriptive but concise. Use a dark, mysterious tone.
+    Current Level: ${level || 1}
+    Player Health: ${health}%
+    `;
+
+    const userPrompt = `
+    Context: ${context}
+    Recent Events: ${recentEvents ? recentEvents.join(', ') : 'None'}
     
-    // Use fallback story generation (AI Gateway requires credit card)
-    const story = getStorySnippet(context, health);
-    
+    Narrate what happens next or describe the atmosphere.
+    `;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.7,
+      max_tokens: 100,
+      top_p: 1,
+      stream: false,
+      stop: null,
+    });
+
+    const story = chatCompletion.choices[0]?.message?.content || "The dungeon shadows shift uneasily...";
+
     return Response.json({ story });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[v0] Story generation error:', error);
+    // Fallback if API fails - INCLUDING ERROR FOR DEBUGGING
     return Response.json(
-      { story: 'The dungeon grows silent...' },
+      { story: `The torch flickers... (Error: ${error.message || String(error)})` },
       { status: 200 }
     );
   }

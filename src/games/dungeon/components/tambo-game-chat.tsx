@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, X, Send, Mic, MicOff, Loader2,
   GripVertical, Maximize2, Minimize2, Sparkles,
-  ChevronDown, Heart, Sword, Map, Trophy, Shield
+  ChevronDown, Heart, Sword, Map, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTamboThread, useTamboVoice } from '@tambo-ai/react';
@@ -38,10 +38,37 @@ const QUICK_PROMPTS = [
 
 export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps) {
   // Tambo SDK hooks
+  // Note: We're using the hook which provides streaming state. 
+  // If the SDK version changes, ensure this destructuring matches.
   const { thread, sendThreadMessage, streaming } = useTamboThread();
   const { isRecording, startRecording, stopRecording } = useTamboVoice();
 
   const messages = thread?.messages || [];
+
+  // Local state to track "thinking" if streaming hangs, or to provide immediate feedback
+  const [isThinking, setIsThinking] = useState(false);
+  const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Sync local thinking state with SDK streaming
+    if (streaming) {
+      setIsThinking(true);
+      // Clear any existing timeout
+      if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+
+      // Safety timeout: if checking takes too long (e.g. 15s) without completion, force stop thinking UI
+      thinkingTimeoutRef.current = setTimeout(() => {
+        setIsThinking(false);
+      }, 15000);
+    } else {
+      setIsThinking(false);
+      if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+    }
+
+    return () => {
+      if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+    };
+  }, [streaming]);
 
   const toggleListening = useCallback(() => {
     if (isRecording) {
@@ -72,7 +99,7 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streaming]); // Scroll on new messages or streaming updates
+  }, [messages, isThinking]); // Scroll on new messages or streaming updates
 
   // Dragging handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -186,9 +213,15 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    await sendThreadMessage(input.trim());
-    setInput('');
-    setShowQuickPrompts(false);
+    try {
+      setIsThinking(true); // Immediate feedback
+      await sendThreadMessage(input.trim());
+      setInput('');
+      setShowQuickPrompts(false);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setIsThinking(false);
+    }
   };
 
   const handleQuickPrompt = (prompt: string) => {
@@ -335,7 +368,16 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
                     : 'bg-muted text-foreground'
                     }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {typeof message.content === 'string'
+                      ? message.content
+                      : Array.isArray(message.content)
+                        ? message.content.map((part: any, i: number) => {
+                          if (part.type === 'text') return part.text;
+                          return '';
+                        }).join('')
+                        : ''}
+                  </p>
                   {/* Tambo SDK handles component rendering automatically via context if implemented,
                       but typically we might need a renderer here.
                       Since we're using the higher-level hooks, let's assume raw text content for now
@@ -351,7 +393,7 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
             ))}
 
             {/* Loading indicator */}
-            {streaming && (
+            {isThinking && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-lg px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -410,7 +452,7 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                 placeholder="Ask anything..."
                 className="flex-1 bg-muted rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                disabled={streaming}
+                disabled={isThinking}
               />
 
               {/* Voice button */}
@@ -418,7 +460,7 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
                 size="icon"
                 variant={isRecording ? 'destructive' : 'outline'}
                 onClick={toggleListening}
-                disabled={streaming}
+                disabled={isThinking}
                 className="shrink-0"
               >
                 {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -428,10 +470,10 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={streaming || !input.trim()}
+                disabled={isThinking || !input.trim()}
                 className="shrink-0"
               >
-                {streaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isThinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
           </div>

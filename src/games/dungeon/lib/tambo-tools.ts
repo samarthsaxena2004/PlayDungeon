@@ -99,6 +99,7 @@ export const createContextHelpers = (gameState: {
   enemiesNearby: number;
   currentQuest: string;
   enemiesDefeated: number;
+  playerName?: string;
 }) => ({
   currentHealth: () => `${gameState.health}/${gameState.maxHealth}`,
   healthStatus: () => gameState.health < 30 ? 'CRITICAL' : gameState.health < 60 ? 'LOW' : 'HEALTHY',
@@ -108,4 +109,5 @@ export const createContextHelpers = (gameState: {
   activeQuest: () => gameState.currentQuest,
   killCount: () => gameState.enemiesDefeated,
   dangerLevel: () => gameState.enemiesNearby > 3 ? 'HIGH' : gameState.enemiesNearby > 0 ? 'MEDIUM' : 'SAFE',
+  adventurerName: () => gameState.playerName || 'Adventurer',
 });

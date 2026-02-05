@@ -1,6 +1,6 @@
 'use client';
 
-import React from "react";
+import React, { useEffect } from "react";
 
 interface TamboProviderWrapperProps {
   children: React.ReactNode;
@@ -52,9 +52,17 @@ export function TamboProviderWrapper({
     [gameState]
   );
 
+  const apiKey = process.env.NEXT_PUBLIC_TAMBO_API_KEY;
+
+  useEffect(() => {
+    if (!apiKey) {
+      console.warn('⚠️ valid NEXT_PUBLIC_TAMBO_API_KEY not found. Chat features may not work correctly.');
+    }
+  }, [apiKey]);
+
   return (
     <TamboProvider
-      apiKey={process.env.NEXT_PUBLIC_TAMBO_API_KEY || 'demo-key'}
+      apiKey={apiKey || 'demo-key'}
       tools={tools}
       components={tamboGameComponents}
       contextHelpers={context}

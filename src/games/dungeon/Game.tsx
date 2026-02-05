@@ -58,6 +58,7 @@ export default function GamePage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const [playerName, setPlayerName] = useState('');
   const lastStoryTriggerRef = useRef<number>(0);
   const storyQueueRef = useRef<string[]>([]);
   const lastHealthRef = useRef(100);
@@ -216,6 +217,7 @@ export default function GamePage() {
           level: state.level,
           health: state.player.health,
           enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
+          playerName,
         }),
       });
 
@@ -228,7 +230,7 @@ export default function GamePage() {
     } finally {
       setIsGeneratingStory(false);
     }
-  }, [state.storyLog, state.level, state.player.health, state.currentQuests, addStoryEntry]);
+  }, [state.storyLog, state.level, state.player.health, state.currentQuests, addStoryEntry, playerName]);
 
   // Trigger story on significant events
   useEffect(() => {
@@ -251,13 +253,17 @@ export default function GamePage() {
   }, [state.player.health, state.enemies.length, state.currentQuests, state.gameStatus, gameStarted, generateStory, state.storyLog]);
 
   const handleStart = useCallback(() => {
+    if (!playerName.trim()) {
+      // Optional: enforce name or provide default
+      // For now just allow empty and fallback to 'Adventurer' in backend/tools
+    }
     initializeAudio();
     setGameStarted(true);
     startGame();
     // Delay music start slightly to allow audio context to initialize
     setTimeout(() => startMusic(), 100);
     generateStory('Player enters the dungeon');
-  }, [startGame, generateStory, initializeAudio, startMusic]);
+  }, [startGame, generateStory, initializeAudio, startMusic, playerName]);
 
   const handleRestart = useCallback(() => {
     resetGame();
@@ -319,6 +325,21 @@ export default function GamePage() {
             Explore the procedurally generated dungeon. Defeat enemies with your fireball.
             Discover milestones. AI narrates your journey.
           </p>
+
+          <div className="mb-6 space-y-2">
+            <label htmlFor="playerName" className="text-sm font-medium text-muted-foreground block text-left">
+              Enter your name, hero:
+            </label>
+            <input
+              id="playerName"
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Adventurer"
+              className="w-full px-4 py-2 bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground/50"
+              onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+            />
+          </div>
 
           {/* Controls info */}
           <AnimatePresence>
@@ -448,6 +469,7 @@ export default function GamePage() {
     enemiesNearby: state.enemies.filter(e => e.isAggro).length,
     currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
     enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
+    playerName: playerName || 'Adventurer',
   };
 
   return (

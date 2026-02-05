@@ -14,7 +14,7 @@ export function DamageOverlay({ health, maxHealth, lastDamageTime }: DamageOverl
   const healthPercent = (health / maxHealth) * 100;
   const isLow = healthPercent < 30;
   const isCritical = healthPercent < 15;
-  
+
   // Trigger flash effect when damage is taken
   useEffect(() => {
     if (lastDamageTime > 0) {
@@ -23,7 +23,7 @@ export function DamageOverlay({ health, maxHealth, lastDamageTime }: DamageOverl
       return () => clearTimeout(timer);
     }
   }, [lastDamageTime]);
-  
+
   return (
     <>
       {/* Damage flash effect */}
@@ -41,17 +41,17 @@ export function DamageOverlay({ health, maxHealth, lastDamageTime }: DamageOverl
           />
         )}
       </AnimatePresence>
-      
+
       {/* Persistent low health vignette */}
       <AnimatePresence>
         {isLow && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ 
+            animate={{
               opacity: isCritical ? [0.4, 0.7, 0.4] : 0.3,
             }}
             exit={{ opacity: 0 }}
-            transition={{ 
+            transition={{
               duration: isCritical ? 0.8 : 0.5,
               repeat: isCritical ? Infinity : 0,
             }}
@@ -62,7 +62,7 @@ export function DamageOverlay({ health, maxHealth, lastDamageTime }: DamageOverl
           />
         )}
       </AnimatePresence>
-      
+
       {/* Critical health warning text */}
       <AnimatePresence>
         {isCritical && (
