@@ -1,0 +1,5 @@
+{
+    "name": "deep-dungeon-party",
+    "main": "server.ts",
+    "compatibilityDate": "2025-02-06"
+}
