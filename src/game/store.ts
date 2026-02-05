@@ -84,7 +84,7 @@ export const useGameStore = create<GameStore>((set) => ({
 
     inventory: [],
     activeScene: [],
-    activeGame: null, // Start at Main Menu
+    activeGame: 'dungeon', // Start directly in Dungeon
     isThinking: false,
 
     addMessage: (msg) => set((state) => ({

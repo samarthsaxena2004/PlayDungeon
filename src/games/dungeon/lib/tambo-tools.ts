@@ -84,6 +84,20 @@ export const createGameTools = (
         };
       },
     },
+    {
+      name: 'triggerAnalyze',
+      description: 'Analyzes the current surroundings using "computer vision" to describe enemies, loot, and potential paths. Use when user says "look around", "what do you see", "analyze", or "scan".',
+      inputSchema: z.object({}),
+      outputSchema: z.object({
+        success: z.boolean(),
+        analysis: z.string(),
+      }),
+      tool: async () => {
+        const threatLevel = gameState.enemies > 3 ? "HIGH" : gameState.enemies > 0 ? "MODERATE" : "SAFE";
+        const analysis = `[SYSTEM SCAN COMPLETE]\n- Location: Dungeon Level ${gameState.level}\n- Status: ${threatLevel} Threat Detected\n- Entities: ${gameState.enemies} Hostiles in proximity\n- Vitals: ${gameState.health} HP\n- Objective: Survive and descend.`;
+        return { success: true, analysis };
+      },
+    },
   ];
 
 // ============================================

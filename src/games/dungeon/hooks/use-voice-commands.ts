@@ -41,7 +41,7 @@ function parseNumber(text: string): number | undefined {
   if (digitMatch) {
     return parseInt(digitMatch[0], 10);
   }
-  
+
   // Check for number words
   const words = text.toLowerCase().split(/\s+/);
   for (const word of words) {
@@ -49,51 +49,51 @@ function parseNumber(text: string): number | undefined {
       return NUMBER_WORDS[word];
     }
   }
-  
+
   return undefined;
 }
 
 // Parse direction from text
 function parseDirection(text: string): 'up' | 'down' | 'left' | 'right' | undefined {
   const lower = text.toLowerCase();
-  
+
   for (const [alias, direction] of Object.entries(DIRECTION_ALIASES)) {
     if (lower.includes(alias)) {
       return direction;
     }
   }
-  
+
   return undefined;
 }
 
 // Parse a voice command from natural language
 export function parseVoiceCommand(text: string): VoiceCommand {
   const lower = text.toLowerCase().trim();
-  
+
   // Stop commands
   if (lower.includes('stop') || lower.includes('halt') || lower.includes('wait') || lower.includes('pause')) {
     return { type: 'stop', raw: text };
   }
-  
+
   // Help commands
   if (lower.includes('help') || lower.includes('what can') || lower.includes('how do')) {
     return { type: 'help', raw: text };
   }
-  
+
   // Attack/shoot commands
-  if (lower.includes('attack') || lower.includes('shoot') || lower.includes('fire') || 
-      lower.includes('blast') || lower.includes('hit') || lower.includes('kill')) {
+  if (lower.includes('attack') || lower.includes('shoot') || lower.includes('fire') ||
+    lower.includes('blast') || lower.includes('hit') || lower.includes('kill')) {
     const count = parseNumber(lower) || 1;
     return { type: 'attack', count, raw: text };
   }
-  
+
   // Interact commands
-  if (lower.includes('interact') || lower.includes('use') || lower.includes('pick') || 
-      lower.includes('grab') || lower.includes('collect') || lower.includes('open') ||
-      lower.includes('click e') || lower.includes('press e') || lower.includes('talk')) {
+  if (lower.includes('interact') || lower.includes('use') || lower.includes('pick') ||
+    lower.includes('grab') || lower.includes('collect') || lower.includes('open') ||
+    lower.includes('click e') || lower.includes('press e') || lower.includes('talk')) {
     return { type: 'interact', raw: text };
   }
-  
+
   // Turn commands (change direction without moving)
   if (lower.includes('turn') || lower.includes('face') || lower.includes('look')) {
     const direction = parseDirection(lower);
@@ -101,30 +101,30 @@ export function parseVoiceCommand(text: string): VoiceCommand {
       return { type: 'turn', direction, raw: text };
     }
   }
-  
+
   // Move commands
-  if (lower.includes('move') || lower.includes('go') || lower.includes('walk') || 
-      lower.includes('run') || lower.includes('step') || lower.includes('block')) {
+  if (lower.includes('move') || lower.includes('go') || lower.includes('walk') ||
+    lower.includes('run') || lower.includes('step') || lower.includes('block')) {
     const direction = parseDirection(lower);
     const count = parseNumber(lower) || 1;
-    
+
     if (direction) {
       return { type: 'move', direction, count, raw: text };
     }
-    
+
     // If no direction specified but has a number, assume forward
     if (count > 1) {
       return { type: 'move', direction: 'up', count, raw: text };
     }
   }
-  
+
   // Direction-only commands (e.g., "left 5", "up", "right 10 times")
   const direction = parseDirection(lower);
   if (direction) {
     const count = parseNumber(lower) || 1;
     return { type: 'move', direction, count, raw: text };
   }
-  
+
   return { type: 'unknown', raw: text };
 }
 
@@ -135,41 +135,52 @@ export function useVoiceCommands({ onCommand, onTranscript, enabled = true }: Us
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+      setIsSupported(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+      setIsSupported(true);
+    }
+  }, []);
+
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognitionAPI) {
-      setIsSupported(true);
+
+    if (SpeechRecognitionAPI && typeof window !== 'undefined') {
       recognitionRef.current = new SpeechRecognitionAPI();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
-      
+
       recognitionRef.current.onresult = (event) => {
         const result = event.results[event.results.length - 1];
         const transcript = result[0].transcript;
-        
+
         setLastTranscript(transcript);
         onTranscript?.(transcript);
-        
+
         // Only process final results
         if (result.isFinal) {
           const command = parseVoiceCommand(transcript);
           onCommand(command);
         }
       };
-      
+
       recognitionRef.current.onerror = (event) => {
         console.error('[v0] Voice recognition error:', event.error);
         if (event.error !== 'no-speech' && event.error !== 'aborted') {
           setIsListening(false);
         }
       };
-      
+
       recognitionRef.current.onend = () => {
         // If in continuous mode, restart after a brief pause
         if (isContinuousMode && enabled) {
@@ -187,7 +198,7 @@ export function useVoiceCommands({ onCommand, onTranscript, enabled = true }: Us
         }
       };
     }
-    
+
     return () => {
       if (restartTimeoutRef.current) {
         clearTimeout(restartTimeoutRef.current);
@@ -197,11 +208,11 @@ export function useVoiceCommands({ onCommand, onTranscript, enabled = true }: Us
       }
     };
   }, [onCommand, onTranscript, isContinuousMode, enabled]);
-  
+
   // Start listening for a single command
   const startListening = useCallback(() => {
     if (!recognitionRef.current || !enabled) return;
-    
+
     try {
       setIsListening(true);
       setIsContinuousMode(false);
@@ -210,29 +221,29 @@ export function useVoiceCommands({ onCommand, onTranscript, enabled = true }: Us
       // Already started
     }
   }, [enabled]);
-  
+
   // Stop listening
   const stopListening = useCallback(() => {
     if (!recognitionRef.current) return;
-    
+
     setIsListening(false);
     setIsContinuousMode(false);
-    
+
     if (restartTimeoutRef.current) {
       clearTimeout(restartTimeoutRef.current);
     }
-    
+
     try {
       recognitionRef.current.stop();
     } catch {
       // Not started
     }
   }, []);
-  
+
   // Toggle continuous listening mode (for hands-free gameplay)
   const toggleContinuousMode = useCallback(() => {
     if (!recognitionRef.current || !enabled) return;
-    
+
     if (isContinuousMode) {
       stopListening();
     } else {
@@ -245,7 +256,7 @@ export function useVoiceCommands({ onCommand, onTranscript, enabled = true }: Us
       }
     }
   }, [isContinuousMode, stopListening, enabled]);
-  
+
   return {
     isListening,
     isContinuousMode,
