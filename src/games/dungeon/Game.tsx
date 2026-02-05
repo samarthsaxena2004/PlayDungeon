@@ -160,7 +160,15 @@ export default function GamePage() {
   useEffect(() => {
     if (!gameStarted) return;
 
+    // Helper to check if user is typing in an input
+    const isTyping = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTyping(e)) return;
+
       const key = e.key.toLowerCase();
       const control = KEY_MAP[key];
 
@@ -177,6 +185,8 @@ export default function GamePage() {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (isTyping(e)) return;
+
       const key = e.key.toLowerCase();
       const control = KEY_MAP[key];
 
