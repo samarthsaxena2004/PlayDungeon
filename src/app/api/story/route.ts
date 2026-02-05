@@ -1,49 +1,61 @@
-import { NextRequest } from "next/server";
-import Groq from "groq-sdk";
-import { dungeonHandler } from "@/lib/games/dungeon";
-import { mazeHandler } from "@/lib/games/maze";
-import { pigeonHandler } from "@/lib/games/pigeon";
-import { piggyHandler } from "@/lib/games/piggy";
+// Fallback story snippets when AI is unavailable
+const STORY_TEMPLATES = {
+  enter: [
+    'You descend into the ancient depths. The air grows cold and heavy with forgotten memories.',
+    'The dungeon entrance looms before you. Shadows dance at the edge of your torchlight.',
+    'Stone walls echo with your footsteps. Something stirs in the darkness ahead.',
+  ],
+  lowHealth: [
+    'Your wounds burn with each step. The darkness seems to press closer...',
+    'Blood drips from your injuries. You must find safety before it is too late.',
+    'Your vision blurs at the edges. The dungeon senses your weakness.',
+  ],
+  combat: [
+    'Steel meets shadow as you battle the dungeon\'s guardians.',
+    'Your fireballs illuminate the ancient halls, revealing more horrors.',
+    'The creatures fall, but more lurk in the shadows beyond.',
+  ],
+  allEnemiesDefeated: [
+    'Silence falls. The last echo of battle fades into the stone walls.',
+    'Victory! But the dungeon has many more secrets to reveal...',
+    'The guardians are vanquished. A path opens before you.',
+  ],
+  default: [
+    'The dungeon whispers secrets in a language long forgotten.',
+    'Ancient runes glow faintly on the walls, marking your passage.',
+    'Somewhere in the depths, something awaits your arrival.',
+    'The torch flickers. Was that movement in the shadows?',
+  ],
+};
 
-const client = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+function getStorySnippet(context: string, health: number): string {
+  let category = 'default';
+  
+  if (context.toLowerCase().includes('enters') || context.toLowerCase().includes('enter')) {
+    category = 'enter';
+  } else if (health < 30) {
+    category = 'lowHealth';
+  } else if (context.toLowerCase().includes('defeated') || context.toLowerCase().includes('enemies')) {
+    category = context.toLowerCase().includes('all') ? 'allEnemiesDefeated' : 'combat';
+  }
+  
+  const templates = STORY_TEMPLATES[category as keyof typeof STORY_TEMPLATES];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
 
-export async function POST(req: NextRequest) {
-  const { gameId, action, state } = await req.json();
-
+export async function POST(req: Request) {
   try {
-    let responseData;
-
-    switch (gameId) {
-      case 'dungeon':
-        responseData = await dungeonHandler(client, action, state);
-        break;
-      case 'maze':
-        responseData = await mazeHandler(client, action, state);
-        break;
-      case 'pigeon':
-        responseData = await pigeonHandler(client, action, state);
-        break;
-      case 'piggy':
-        responseData = await piggyHandler(client, action, state);
-        break;
-      default:
-        // Fallback or Error
-        return Response.json({ narrative: "Game cartridge blown. Re-insert." }, { status: 400 });
-    }
-
-    return Response.json(responseData);
-
-  } catch (err) {
-    console.error("API ERROR:", err);
-    return Response.json({
-      narrative: "SYSTEM FAILURE. The console sparks and smokes...",
-      ui: [
-        { component: "DungeonCanvas", props: { location: "FATAL ERROR" } },
-        { component: "ChoiceButtons", props: { choices: [{ id: "retry", text: "Reboot System" }] } }
-      ],
-      state: state,
-    }, { status: 500 });
+    const { context, health } = await req.json();
+    
+    // Use fallback story generation (AI Gateway requires credit card)
+    const story = getStorySnippet(context, health);
+    
+    return Response.json({ story });
+  } catch (error) {
+    console.error('[v0] Story generation error:', error);
+    return Response.json(
+      { story: 'The dungeon grows silent...' },
+      { status: 200 }
+    );
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, memo } from 'react';
-import type { GameState } from '@/lib/game-types';
+import type { GameState } from '@/games/dungeon/lib/game-types';
 
 interface GameRendererProps {
   state: GameState;

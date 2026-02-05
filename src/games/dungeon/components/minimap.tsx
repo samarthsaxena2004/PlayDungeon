@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { GameState } from '@/lib/game-types';
+import type { GameState } from '@/games/dungeon/lib/game-types';
 
 interface MinimapProps {
   state: GameState;

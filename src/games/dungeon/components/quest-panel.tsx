@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, Circle, Target } from 'lucide-react';
-import type { Quest } from '@/lib/game-types';
+import type { Quest } from '@/games/dungeon/lib/game-types';
 
 interface QuestPanelProps {
   quests: Quest[];

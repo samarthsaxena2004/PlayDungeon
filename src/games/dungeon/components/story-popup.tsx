@@ -1,0 +1,123 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Scroll, MessageSquare, Sparkles, Swords, MapPin } from 'lucide-react';
+import type { StoryEntry } from '@/games/dungeon/lib/game-types';
+
+interface StoryPopupProps {
+  storyLog: StoryEntry[];
+  onStoryShown?: () => void;
+}
+
+const typeIcons = {
+  narration: Scroll,
+  dialogue: MessageSquare,
+  discovery: Sparkles,
+  combat: Swords,
+  milestone: MapPin,
+};
+
+const typeStyles = {
+  narration: {
+    bg: 'bg-muted/95',
+    border: 'border-border',
+    icon: 'text-muted-foreground',
+  },
+  dialogue: {
+    bg: 'bg-accent/95',
+    border: 'border-accent',
+    icon: 'text-accent-foreground',
+  },
+  discovery: {
+    bg: 'bg-warning/20',
+    border: 'border-warning',
+    icon: 'text-warning',
+  },
+  combat: {
+    bg: 'bg-destructive/20',
+    border: 'border-destructive',
+    icon: 'text-destructive',
+  },
+  milestone: {
+    bg: 'bg-health/20',
+    border: 'border-health',
+    icon: 'text-health',
+  },
+};
+
+export function StoryPopup({ storyLog, onStoryShown }: StoryPopupProps) {
+  const [visibleStory, setVisibleStory] = useState<StoryEntry | null>(null);
+  const [lastShownId, setLastShownId] = useState<string | null>(null);
+  
+  // Show new story entries as popups
+  useEffect(() => {
+    const latestEntry = storyLog[storyLog.length - 1];
+    
+    if (latestEntry && latestEntry.id !== lastShownId) {
+      setVisibleStory(latestEntry);
+      setLastShownId(latestEntry.id);
+      onStoryShown?.();
+      
+      // Auto-hide after delay based on text length
+      const displayTime = Math.max(4000, latestEntry.text.length * 50);
+      const timer = setTimeout(() => {
+        setVisibleStory(null);
+      }, displayTime);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [storyLog, lastShownId, onStoryShown]);
+  
+  if (!visibleStory) return null;
+  
+  const Icon = typeIcons[visibleStory.type];
+  const styles = typeStyles[visibleStory.type];
+  
+  return (
+    <AnimatePresence>
+      <motion.div
+        key={visibleStory.id}
+        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+        className="absolute bottom-20 left-1/2 -translate-x-1/2 z-25 max-w-md w-[90%]"
+      >
+        <div 
+          className={`
+            ${styles.bg} ${styles.border}
+            backdrop-blur-md border-2 rounded-lg shadow-xl
+            p-4 cursor-pointer
+          `}
+          onClick={() => setVisibleStory(null)}
+        >
+          <div className="flex gap-3">
+            <div className={`${styles.icon} mt-0.5`}>
+              <Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm leading-relaxed text-foreground font-medium">
+                {visibleStory.text}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wider">
+                Click to dismiss
+              </p>
+            </div>
+          </div>
+          
+          {/* Progress bar for auto-dismiss */}
+          <motion.div
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ 
+              duration: Math.max(4, visibleStory.text.length * 0.05),
+              ease: 'linear'
+            }}
+            className="absolute bottom-0 left-0 right-0 h-1 bg-primary/50 origin-left rounded-b-lg"
+          />
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
