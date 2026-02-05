@@ -54,8 +54,8 @@ const SOUNDS = {
     loop: false,
   },
   levelUp: {
-    url: 'https://assets.mixkit.co/active_storage/sfx/1997/1997-preview.mp3',
-    volume: 0.5,
+    url: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3', // Win/Coins sound - less jarring
+    volume: 0.4,
     loop: false,
   },
   victory: {

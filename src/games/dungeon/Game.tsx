@@ -84,8 +84,8 @@ export default function GamePage() {
     // Level up
     if (state.level > lastLevelRef.current) {
       playSound('levelUp');
+      lastLevelRef.current = state.level;
     }
-    lastLevelRef.current = state.level;
 
     // Game over or victory
     if (state.gameStatus === 'gameover') {
