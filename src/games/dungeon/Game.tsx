@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useGameEngine } from '@/games/dungeon/hooks/use-game-engine';
+import { useGameStore } from '@/game/store';
 import { useGameSounds } from '@/games/dungeon/hooks/use-game-sounds';
 import { GameRenderer } from '@/games/dungeon/components/game-renderer';
 import { ActionButtons } from '@/games/dungeon/components/action-buttons';
@@ -22,7 +23,7 @@ import { StoryPopup } from '@/games/dungeon/components/story-popup';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Info, Keyboard } from 'lucide-react';
+import { Play, Info, Keyboard, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 
@@ -44,6 +45,7 @@ const KEY_MAP: KeyMap = {
 };
 
 export default function GamePage() {
+  const { setActiveGame } = useGameStore();
   const { state, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry } = useGameEngine();
   const {
     initializeAudio,
@@ -499,6 +501,18 @@ export default function GamePage() {
       <div className="fixed inset-0 overflow-hidden select-none">
         {/* Animated Background */}
         <AnimatedBackdrop />
+
+        {/* Back Button */}
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="absolute top-4 left-4 z-50 p-2 bg-card/80 backdrop-blur-sm border border-border rounded-full shadow-lg hover:bg-muted transition-colors group"
+          onClick={() => setActiveGame(null)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ArrowLeft className="w-5 h-5 text-foreground group-hover:text-primary transition-colors" />
+        </motion.button>
 
         {/* Centered 4:3 Game Container */}
         <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
