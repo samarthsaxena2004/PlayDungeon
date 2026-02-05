@@ -88,7 +88,7 @@ export function useGameSounds() {
   // Initialize audio elements
   const initializeAudio = useCallback(() => {
     if (isInitialized) return;
-    
+
     Object.entries(SOUNDS).forEach(([name, config]) => {
       const audio = new Audio();
       audio.src = config.url;
@@ -96,30 +96,44 @@ export function useGameSounds() {
       audio.loop = config.loop;
       audio.preload = 'auto';
       audioRefs.current.set(name as SoundName, audio);
-      
+
       if (name === 'bgMusic') {
         bgMusicRef.current = audio;
       }
     });
-    
+
     setIsInitialized(true);
   }, [isInitialized]);
 
-  // Play a sound effect
-  const playSound = useCallback((name: SoundName) => {
+  // Play a sound effect with optional pitch variance to reduce repetition
+  const playSound = useCallback((name: SoundName, variance: number = 0) => {
     if (isMuted) return;
-    
+
     const audio = audioRefs.current.get(name);
     if (audio) {
       // Clone for overlapping sounds
       if (!SOUNDS[name].loop) {
         const clone = audio.cloneNode() as HTMLAudioElement;
-        clone.volume = SOUNDS[name].volume * sfxVolume;
-        clone.play().catch(() => {});
+
+        // Apply volume
+        clone.volume = Math.max(0, Math.min(1, SOUNDS[name].volume * sfxVolume));
+
+        // Apply pitch variance (playbackRate)
+        // e.g. variance 0.1 means speed between 0.9 and 1.1
+        if (variance > 0) {
+          const rate = 1.0 + (Math.random() * variance * 2 - variance);
+          clone.playbackRate = Math.max(0.5, Math.min(2.0, rate));
+          // Preserve pitch is false for "chipmunk" effect (traditional pitch shifting)
+          // or true for just speed change. For game sound variation, 
+          // changing speed AND pitch (default behavior of playbackRate) is usually desired.
+          clone.preservesPitch = false;
+        }
+
+        clone.play().catch(() => { });
         clone.onended = () => clone.remove();
       } else {
         audio.volume = SOUNDS[name].volume * musicVolume;
-        audio.play().catch(() => {});
+        audio.play().catch(() => { });
       }
     }
   }, [isMuted, sfxVolume, musicVolume]);
@@ -138,18 +152,18 @@ export function useGameSounds() {
     if (bgMusicRef.current && !isMuted) {
       bgMusicRef.current.volume = SOUNDS.bgMusic.volume * musicVolume;
       bgMusicRef.current.loop = true;
-      
+
       // Handle loop continuity
       const handleEnded = () => {
         if (bgMusicRef.current) {
           bgMusicRef.current.currentTime = 0;
-          bgMusicRef.current.play().catch(() => {});
+          bgMusicRef.current.play().catch(() => { });
         }
       };
       bgMusicRef.current.removeEventListener('ended', handleEnded);
       bgMusicRef.current.addEventListener('ended', handleEnded);
-      
-      bgMusicRef.current.play().catch(() => {});
+
+      bgMusicRef.current.play().catch(() => { });
     }
   }, [isMuted, musicVolume]);
 
@@ -168,7 +182,7 @@ export function useGameSounds() {
       if (newMuted && bgMusicRef.current) {
         bgMusicRef.current.pause();
       } else if (!newMuted && bgMusicRef.current) {
-        bgMusicRef.current.play().catch(() => {});
+        bgMusicRef.current.play().catch(() => { });
       }
       return newMuted;
     });

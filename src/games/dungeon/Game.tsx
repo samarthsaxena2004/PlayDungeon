@@ -71,13 +71,13 @@ export default function GamePage() {
 
     // Player took damage
     if (state.player.health < lastHealthRef.current) {
-      playSound('playerHurt');
+      playSound('playerHurt', 0.1);
     }
     lastHealthRef.current = state.player.health;
 
     // Enemy defeated
     if (state.enemies.length < lastEnemyCountRef.current) {
-      playSound('enemyDeath');
+      playSound('enemyDeath', 0.15);
     }
     lastEnemyCountRef.current = state.enemies.length;
 
@@ -101,7 +101,7 @@ export default function GamePage() {
   const handleAttack = useCallback(() => {
     if (state.player.attackCooldown <= 0) {
       attack();
-      playSound('fireball');
+      playSound('fireball', 0.2);
     }
   }, [attack, playSound, state.player.attackCooldown]);
 
@@ -149,9 +149,9 @@ export default function GamePage() {
       if (nearbyMilestone.type === 'npc') {
         playSound('npcTalk');
       } else if (nearbyMilestone.type === 'portal') {
-        playSound('portal');
+        playSound('portal', 0.05);
       } else {
-        playSound('pickup');
+        playSound('pickup', 0.1);
       }
     }
   }, [interact, playSound, state.milestones, state.player.x, state.player.y]);
@@ -252,27 +252,34 @@ export default function GamePage() {
     }
   }, [state.player.health, state.enemies.length, state.currentQuests, state.gameStatus, gameStarted, generateStory, state.storyLog]);
 
+  // Add a unique key to force remount of critical components on reset
+  const [gameInstanceId, setGameInstanceId] = useState(0);
+
   const handleStart = useCallback(() => {
-    if (!playerName.trim()) {
-      // Optional: enforce name or provide default
-      // For now just allow empty and fallback to 'Adventurer' in backend/tools
+    let finalName = playerName.trim();
+    if (!finalName) {
+      finalName = 'Adventurer';
+      setPlayerName('Adventurer');
     }
+
     initializeAudio();
     setGameStarted(true);
     startGame();
     // Delay music start slightly to allow audio context to initialize
     setTimeout(() => startMusic(), 100);
-    generateStory('Player enters the dungeon');
+    generateStory(`Player ${finalName} enters the dungeon`);
   }, [startGame, generateStory, initializeAudio, startMusic, playerName]);
 
   const handleRestart = useCallback(() => {
     resetGame();
+    // Increment instance ID to force remount of components that might have stuck state (like DamageOverlay)
+    setGameInstanceId(prev => prev + 1);
     setGameStarted(true);
     lastHealthRef.current = 100;
     lastEnemyCountRef.current = 0;
     startMusic();
-    generateStory('Player enters the dungeon once more');
-  }, [resetGame, generateStory, startMusic]);
+    generateStory(`${playerName || 'Adventurer'} enters the dungeon once more`);
+  }, [resetGame, generateStory, startMusic, playerName]);
 
   // Story notification sound
   const handleStoryShown = useCallback(() => {
@@ -545,8 +552,9 @@ export default function GamePage() {
               onToggleMute={toggleMute}
             />
 
-            {/* Damage screen effect */}
+            {/* Damage screen effect - Key forces reset on new game */}
             <DamageOverlay
+              key={`damage-overlay-${gameInstanceId}`}
               health={state.player.health}
               maxHealth={state.player.maxHealth}
               lastDamageTime={state.player.lastDamageTime}

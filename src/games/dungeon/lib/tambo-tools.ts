@@ -109,5 +109,5 @@ export const createContextHelpers = (gameState: {
   activeQuest: () => gameState.currentQuest,
   killCount: () => gameState.enemiesDefeated,
   dangerLevel: () => gameState.enemiesNearby > 3 ? 'HIGH' : gameState.enemiesNearby > 0 ? 'MEDIUM' : 'SAFE',
-  adventurerName: () => gameState.playerName || 'Adventurer',
+  adventurerName: () => (gameState.playerName && gameState.playerName.trim() !== '') ? gameState.playerName : 'Adventurer',
 });
