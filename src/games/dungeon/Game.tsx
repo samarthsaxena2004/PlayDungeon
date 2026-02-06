@@ -25,7 +25,7 @@ import { StoryPopup } from '@/games/dungeon/components/story-popup';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Info, Keyboard, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { Play, Info, Keyboard, ArrowLeft, ShoppingBag, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 
@@ -63,6 +63,7 @@ export default function GamePage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showTamboChat, setShowTamboChat] = useState(false);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const lastStoryTriggerRef = useRef<number>(0);
@@ -557,29 +558,49 @@ export default function GamePage() {
                 />
               </div>
 
-              {/* Tambo AI Chat */}
-              <div className="pointer-events-auto relative">
-                <TamboGameChat
-                  gameContext={{
-                    health: state.player.health,
-                    maxHealth: state.player.maxHealth,
-                    level: state.level,
-                    score: state.score,
-                    enemiesNearby: state.enemies.filter(e => e.isAggro).length,
-                    enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
-                    currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
-                    playerX: state.player.x,
-                    playerY: state.player.y,
-                  }}
-                  onGameAction={(action) => {
-                    if (action === 'attack') handleAttack();
-                    else if (action === 'interact') handleInteract();
-                  }}
-                  docked={true} // Force relative positioning
-                  className="shadow-xl"
-                />
+              {/* Tambo AI Chat Trigger - Styled like Voice Control */}
+              <div className="pointer-events-auto">
+                {!showTamboChat && (
+                  <motion.button
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowTamboChat(true)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg bg-card/90 backdrop-blur-sm border border-border text-foreground hover:bg-muted relative"
+                    title="Tambo AI Guide"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full flex items-center justify-center">
+                      <Sparkles className="w-1.5 h-1.5 text-primary-foreground" />
+                    </span>
+                  </motion.button>
+                )}
               </div>
             </div>
+
+
+            {/* Tambo AI Chat - Draggable Window */}
+            <TamboGameChat
+              isOpen={showTamboChat}
+              onClose={() => setShowTamboChat(false)}
+              gameContext={{
+                health: state.player.health,
+                maxHealth: state.player.maxHealth,
+                level: state.level,
+                score: state.score,
+                enemiesNearby: state.enemies.filter(e => e.isAggro).length,
+                enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
+                currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
+                playerX: state.player.x,
+                playerY: state.player.y,
+              }}
+              onGameAction={(action) => {
+                if (action === 'attack') handleAttack();
+                else if (action === 'interact') handleInteract();
+              }}
+              className="shadow-xl"
+            />
 
             {/* Damage screen effect - Key forces reset on new game */}
             <DamageOverlay
@@ -607,6 +628,6 @@ export default function GamePage() {
           </div>
         </div>
       </div>
-    </TamboProviderWrapper>
+    </TamboProviderWrapper >
   );
 }

@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  AlertTriangle, 
-  Volume2, 
-  VolumeX, 
-  Swords, 
-  Heart, 
+import {
+  AlertTriangle,
+  Volume2,
+  VolumeX,
+  Swords,
+  Heart,
   Trophy,
   ChevronUp,
   ChevronDown,
@@ -71,11 +71,11 @@ const typeConfig = {
   },
 };
 
-export function NotificationBar({ 
-  gameState, 
-  isMuted, 
+export function NotificationBar({
+  gameState,
+  isMuted,
   onToggleMute,
-  onDangerAlert 
+  onDangerAlert
 }: NotificationBarProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -84,12 +84,12 @@ export function NotificationBar({
   const lastEnemyCountRef = useRef(gameState.enemies.length);
   const lastLevelRef = useRef(gameState.level);
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Generate notifications based on game state changes
   useEffect(() => {
     const newNotifications: Notification[] = [];
     const now = Date.now();
-    
+
     // Check for incoming danger (enemies aggro)
     const aggroEnemies = gameState.enemies.filter(e => e.isAggro);
     if (aggroEnemies.length > 0 && gameState.player.health < 50) {
@@ -102,7 +102,7 @@ export function NotificationBar({
       });
       onDangerAlert?.();
     }
-    
+
     // Check for health changes
     if (gameState.player.health < lastHealthRef.current) {
       const damage = lastHealthRef.current - gameState.player.health;
@@ -125,7 +125,7 @@ export function NotificationBar({
       }
     }
     lastHealthRef.current = gameState.player.health;
-    
+
     // Check for enemy defeats
     if (gameState.enemies.length < lastEnemyCountRef.current) {
       const defeated = lastEnemyCountRef.current - gameState.enemies.length;
@@ -136,7 +136,7 @@ export function NotificationBar({
         timestamp: now,
         priority: 1,
       });
-      
+
       // Check if all enemies defeated
       if (gameState.enemies.length === 0) {
         newNotifications.push({
@@ -149,7 +149,7 @@ export function NotificationBar({
       }
     }
     lastEnemyCountRef.current = gameState.enemies.length;
-    
+
     // Check for level changes
     if (gameState.level > lastLevelRef.current) {
       newNotifications.push({
@@ -161,34 +161,50 @@ export function NotificationBar({
       });
     }
     lastLevelRef.current = gameState.level;
-    
+
     // Add new notifications
     if (newNotifications.length > 0) {
       setNotifications(prev => [...prev, ...newNotifications].slice(-20));
-      
+
       // Show highest priority notification
-      const highestPriority = newNotifications.reduce((a, b) => 
+      const highestPriority = newNotifications.reduce((a, b) =>
         a.priority > b.priority ? a : b
       );
       showNotification(highestPriority);
     }
   }, [gameState, onDangerAlert]);
-  
+
+  // Auto-cleanup old notifications
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setNotifications(prev => {
+        const remaining = prev.filter(n => now - n.timestamp < 5000); // Remove after 5s
+        if (remaining.length !== prev.length) {
+          return remaining;
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const showNotification = (notification: Notification) => {
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
-    
+
     setCurrentNotification(notification);
-    
+
     notificationTimeoutRef.current = setTimeout(() => {
       setCurrentNotification(null);
     }, 3000);
   };
-  
+
   const config = currentNotification ? typeConfig[currentNotification.type] : null;
   const Icon = config?.icon;
-  
+
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
       {/* Level and enemies display - compact inline */}
@@ -213,7 +229,7 @@ export function NotificationBar({
           </button>
         </div>
       </div>
-      
+
       {/* Notification display */}
       <div className="flex items-center gap-2">
         {/* Current notification display */}
@@ -222,16 +238,16 @@ export function NotificationBar({
             <motion.div
               key={currentNotification.id}
               initial={{ opacity: 0, x: -20, scale: 0.9 }}
-              animate={{ 
-                opacity: 1, 
-                x: 0, 
+              animate={{
+                opacity: 1,
+                x: 0,
                 scale: 1,
                 ...(config.animate && {
                   scale: [1, 1.02, 1],
                 })
               }}
               exit={{ opacity: 0, x: 20, scale: 0.9 }}
-              transition={{ 
+              transition={{
                 duration: 0.2,
                 ...(config.animate && {
                   scale: { repeat: Infinity, duration: 0.5 }
@@ -251,7 +267,7 @@ export function NotificationBar({
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Expand button for history */}
         {notifications.length > 0 && (
           <motion.button
@@ -268,7 +284,7 @@ export function NotificationBar({
           </motion.button>
         )}
       </div>
-      
+
       {/* Expanded notification history */}
       <AnimatePresence>
         {isExpanded && (
@@ -315,8 +331,8 @@ export function NotificationBar({
           </motion.div>
         )}
       </AnimatePresence>
-      
-      
+
+
     </div>
   );
 }

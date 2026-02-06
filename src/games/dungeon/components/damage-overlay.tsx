@@ -67,10 +67,11 @@ export function DamageOverlay({ health, maxHealth, lastDamageTime }: DamageOverl
       <AnimatePresence>
         {isCritical && (
           <motion.div
+            key="critical-alert"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: [0.7, 1, 0.7], y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, repeat: Infinity }}
+            transition={{ duration: 0.5, repeat: Infinity }}
             className="absolute top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
           >
             <div className="bg-destructive/90 text-destructive-foreground px-4 py-2 rounded-lg shadow-lg border border-destructive">

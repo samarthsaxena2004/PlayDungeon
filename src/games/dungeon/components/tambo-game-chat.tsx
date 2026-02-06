@@ -23,7 +23,9 @@ interface TamboGameChatProps {
     playerY: number;
   };
   onGameAction?: (action: string) => void;
-  docked?: boolean;
+
+  isOpen: boolean;
+  onClose: () => void;
   className?: string; // Additional custom classes
 }
 
@@ -38,7 +40,7 @@ const QUICK_PROMPTS = [
 // Messages are now handled by Tambo SDK
 
 
-export function TamboGameChat({ gameContext, onGameAction, docked = false, className = '' }: TamboGameChatProps) {
+export function TamboGameChat({ gameContext, onGameAction, isOpen, onClose, className = '' }: TamboGameChatProps) {
   // Tambo SDK hooks
   // Note: We're using the hook which provides streaming state. 
   // If the SDK version changes, ensure this destructuring matches.
@@ -80,7 +82,12 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
     }
   }, [isRecording, startRecording, stopRecording]);
 
-  const [isOpen, setIsOpen] = useState(false);
+  // Controlled state if props provided, otherwise internal (though we are moving to controlled)
+  // But for this refactor, let's assume controlled for the main usage.
+  // We'll rename local isOpen to showWindow if we want to keep some internal logic, but simpler is to just use the prop.
+
+  // Actually, to avoid breaking other usages if any (though only Game.tsx uses it), let's strictly use props for open state.
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState(true);
   const [input, setInput] = useState('');
@@ -97,6 +104,7 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
+  const dragMoved = useRef(false);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -105,7 +113,7 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
 
   // Dragging handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (docked) return; // Disable dragging when docked
+    // Enable dragging from header
     if ((e.target as HTMLElement).closest('.chat-header')) {
       setIsDragging(true);
       dragOffset.current = {
@@ -117,6 +125,7 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
+      dragMoved.current = true;
       const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.current.x));
       const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.current.y));
       setPosition({ x: newX, y: newY });
@@ -266,25 +275,7 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
   //   setIsLoading(false);
   // };
 
-  // Toggle button when closed
-  if (!isOpen) {
-    return (
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(true)}
-        className="absolute bottom-4 left-4 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center"
-        aria-label="Open AI Chat"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full flex items-center justify-center">
-          <Sparkles className="w-2 h-2 text-accent-foreground" />
-        </span>
-      </motion.button>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
     <motion.div
@@ -293,9 +284,9 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       style={{
-        position: docked ? 'relative' : 'absolute',
-        left: docked ? 'auto' : position.x,
-        top: docked ? 'auto' : position.y,
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
         width: isMinimized ? 280 : size.width,
         height: isMinimized ? 'auto' : size.height,
         zIndex: 50,
@@ -303,8 +294,8 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
       className={`bg-card/95 backdrop-blur-md border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden ${className}`}
       onMouseDown={handleMouseDown}
     >
-      {/* Header - Draggable only if not docked */}
-      <div className={`chat-header flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border select-none ${docked ? '' : 'cursor-move'}`}>
+      {/* Header - Draggable */}
+      <div className="chat-header flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border select-none cursor-move">
         <div className="flex items-center gap-2">
           <GripVertical className="w-4 h-4 text-muted-foreground" />
           <Sparkles className="w-4 h-4 text-primary" />
@@ -319,7 +310,7 @@ export function TamboGameChat({ gameContext, onGameAction, docked = false, class
             {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={onClose}
             className="p-1 hover:bg-muted rounded transition-colors"
             aria-label="Close chat"
           >
