@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import type { GameState } from '@/games/dungeon/lib/game-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minimize2 } from 'lucide-react';
@@ -10,8 +10,19 @@ interface MinimapProps {
   state: GameState;
 }
 
-export function Minimap({ state }: MinimapProps) {
+
+export const Minimap = memo(MinimapComponent, (prev: MinimapProps, next: MinimapProps) => {
+  if (prev.state.map !== next.state.map) return false;
+  if (Math.abs(prev.state.player.x - next.state.player.x) > 50) return false; // Only update if moved significantly
+  if (Math.abs(prev.state.player.y - next.state.player.y) > 50) return false;
+  if (prev.state.enemies.length !== next.state.enemies.length) return false;
+  if (prev.state.milestones !== next.state.milestones) return false;
+  return true;
+});
+
+function MinimapComponent({ state }: MinimapProps) {
   const { map, player, enemies, milestones } = state;
+  // ... (rest of component is inside)
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Scale varies based on expanded state

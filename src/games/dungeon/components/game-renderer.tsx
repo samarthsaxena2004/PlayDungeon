@@ -430,4 +430,17 @@ function GameRendererComponent({ state }: GameRendererProps) {
   );
 }
 
-export const GameRenderer = memo(GameRendererComponent);
+export const GameRenderer = memo(GameRendererComponent, (prev: GameRendererProps, next: GameRendererProps) => {
+  // Only re-render if visual state changes
+  if (prev.state.player.x !== next.state.player.x) return false;
+  if (prev.state.player.y !== next.state.player.y) return false;
+  if (prev.state.player.direction !== next.state.player.direction) return false;
+
+  // Arrays are new refs every tick, so we must check lengths or content loosely 
+  // (Deep check is too expensive, length check + reference is a good heuristic for this game)
+  if (prev.state.enemies !== next.state.enemies) return false;
+  if (prev.state.fireballs !== next.state.fireballs) return false;
+  if (prev.state.map !== next.state.map) return false;
+
+  return true;
+});

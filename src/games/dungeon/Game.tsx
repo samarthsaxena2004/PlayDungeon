@@ -203,7 +203,7 @@ export default function GamePage() {
 
 
   // AI DIRECTOR LOGIC
-  const runDirector = useCallback(async () => {
+  const runDirector = useCallback(async (triggerEvent?: string) => {
     const now = Date.now();
     // Cooldown: 15 seconds
     if (now - lastDirectorTimeRef.current < 15000) return;
@@ -226,7 +226,9 @@ export default function GamePage() {
             kills: state.score / 100, // Roughly
             timeAlive: 60 // Mock for now
           },
-          mapState: {} // Add map analysis here later
+
+          mapState: {}, // Add map analysis here later
+          triggerEvent
         })
       });
 
@@ -249,7 +251,16 @@ export default function GamePage() {
     } finally {
       setDirectorActive(false);
     }
+
   }, [state.player.health, state.coins, state.player.x, state.player.y, state.score, applyAIAction, playSound]);
+
+  // Director Trigger Watcher (Event Driven)
+  useEffect(() => {
+    if (state.directorTrigger) {
+      runDirector(state.directorTrigger);
+      dispatch({ type: 'CLEAR_DIRECTOR_TRIGGER' });
+    }
+  }, [state.directorTrigger, runDirector, dispatch]);
 
   // Director Loop
   useEffect(() => {
@@ -529,7 +540,7 @@ export default function GamePage() {
                         }
 
                         // Show Tambo's reply as a story log or toast
-                        if (reply) {
+                        if (reply && reply.trim().length > 0) {
                           addStoryEntry({ text: `Tambo: "${reply}"`, type: 'dialogue' });
                         }
                       }

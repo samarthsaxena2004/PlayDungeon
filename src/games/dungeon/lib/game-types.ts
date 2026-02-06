@@ -75,6 +75,21 @@ export interface GameMap {
 
 import { PlayerProfile } from '@/lib/personality';
 
+export interface AIState {
+  fear: number;      // 0-100: How scary the dungeon is
+  sanity: number;    // 0-100: Player's mental state (100 = sane)
+  reputation: number; // 0-100: How much entities respect the player
+  narrativeArc: 'rising_action' | 'climax' | 'falling_action' | 'calm';
+}
+
+export interface RoomModifiers {
+  speedMultiplier: number; // 1.0 = normal
+  damageMultiplier: number; // 1.0 = normal
+  visibility: number; // 0-1, 1 = full
+  gravity: number; // 1.0 = normal
+  atmosphere: string; // e.g. "heavy_mist", "oppressive_heat"
+}
+
 export interface GameState {
   player: Player;
   enemies: Enemy[];
@@ -89,6 +104,9 @@ export interface GameState {
   level: number;
   coins: number;
   profile: PlayerProfile;
+  aiState: AIState;        // New Persistent Memory
+  roomModifiers: RoomModifiers; // New Legislative Rules
+  directorTrigger: 'combat_start' | 'new_level' | 'low_health' | 'periodic' | null;
 }
 
 export interface Quest {
@@ -140,4 +158,5 @@ export type GameAction =
   | { type: 'RESET_GAME' }
   | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] }
   | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } }
-  | { type: 'APPLY_AI_ACTION'; tool: string; args: any };
+  | { type: 'APPLY_AI_ACTION'; tool: string; args: any }
+  | { type: 'CLEAR_DIRECTOR_TRIGGER' };

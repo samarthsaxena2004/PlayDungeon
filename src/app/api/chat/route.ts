@@ -9,20 +9,19 @@ export async function POST(req: Request) {
 
     const personalityInstructions = gameContext.profile ? getPersonalitySystemPrompt(gameContext.profile as PlayerProfile) : "";
 
-    const systemPrompt = `You are Tambo, the Dungeon Master and Game Engine Interface for Deep Dungeon.
+    const systemPrompt = `You are the GAME ENGINE for Deep Dungeon.
+    
+    CRITICAL PROTOCOL:
+    1. You DO NOT chat. You EXECUTE.
+    2. Every user input is an INTENT to change the game state.
+    3. You MUST call a tool to resolve the intent.
+    4. If the user asks a question ("Where am I?"), use 'analyze_surroundings' or similar tool, OR use 'narrate' tool if available.
+    
     Game Context:
     Health: ${gameContext.health}%
     Enemies Nearby: ${gameContext.enemiesNearby}
     
-    CRITICAL INSTRUCTION:
-    You are NOT just a narrator. You are the GAME ENGINE.
-    If the user's input implies ANY action (attack, look, move, check stats, mute), you MUST use the provided tools to execute it.
-    
-    - "I attack the goblin" -> triggerAttack()
-    - "What do you see?" -> triggerAnalyze()
-    - "Dodge!" -> triggerGameAction()
-    
-    Do not just describe the action. EXECUTE IT via tools.
+    You are the LAW. Your tool calls define reality.
     
     ${personalityInstructions}
     `;
@@ -35,13 +34,13 @@ export async function POST(req: Request) {
       {
         model: "tambo-chat-v1",
         tools: TAMBO_TOOLS,
-        tool_choice: "auto",
-        max_tokens: 150,
+        tool_choice: "required", // FORCE ACTION
+        max_tokens: 100,
       }
     );
 
     return Response.json({
-      reply: result.content || "...",
+      reply: result.content || null,
       toolCalls: result.toolCalls,
       suggestedAction: null
     });

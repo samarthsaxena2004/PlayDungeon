@@ -89,6 +89,20 @@ function createInitialState(level: number = 1, initialGold: number = 0): GameSta
     level,
     coins: initialGold,
     profile: INITIAL_PROFILE,
+    aiState: {
+      fear: 0,
+      sanity: 100,
+      reputation: 50,
+      narrativeArc: 'calm'
+    },
+    roomModifiers: {
+      speedMultiplier: 1.0,
+      damageMultiplier: 1.0,
+      visibility: 1.0,
+      gravity: 1.0,
+      atmosphere: 'clear'
+    },
+    directorTrigger: null
   };
 }
 
@@ -127,133 +141,137 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       });
       newPlayer.activeEffects = activeEffects;
 
-      // Calculate current speed based on effects
+      // Calculate current speed based on effects AND Room Rules (Tambo Law)
       const speedMultiplier = activeEffects.find(e => e.type === 'speed')?.value || 1;
-      newPlayer.speed = PLAYER_SPEED * speedMultiplier;
+      newPlayer.speed = PLAYER_SPEED * speedMultiplier * state.roomModifiers.speedMultiplier;
 
       // Update attack cooldown
       if (newPlayer.attackCooldown > 0) {
         newPlayer.attackCooldown = Math.max(0, newPlayer.attackCooldown - deltaTime);
       }
 
-      // Update fireballs
-      newFireballs = newFireballs
-        .map((fb) => ({
-          ...fb,
-          x: fb.x + fb.vx * deltaTime * 0.06,
-          y: fb.y + fb.vy * deltaTime * 0.06,
-        }))
-        .filter((fb) => {
-          // Remove if expired
-          if (currentTime - fb.createdAt > fb.lifetime) return false;
-          // Remove if hit wall
-          if (!isWalkable(state.map, fb.x, fb.y, fb.width, fb.height)) return false;
-          return true;
-        });
+      // --- OPTIMIZED ENTITY LOOP ---
+      // Single pass for enemy logic, collision, and updates
+      let combatStarted = false;
+      const validEnemies: Enemy[] = [];
+      const validFireballs: Fireball[] = [];
 
-      // Check fireball-enemy collisions
-      for (const fireball of newFireballs) {
-        for (let i = 0; i < newEnemies.length; i++) {
-          if (checkCollision(fireball, newEnemies[i])) {
-            newEnemies[i] = {
-              ...newEnemies[i],
-              health: newEnemies[i].health - fireball.damage,
-            };
-            // Remove fireball
-            newFireballs = newFireballs.filter((fb) => fb.id !== fireball.id);
+      // Process Fireballs first (Movement & Expiry)
+      // (Filtered in-place logic to avoid map+filter overhead)
+      for (const fb of state.fireballs) {
+        if (currentTime - fb.createdAt > fb.lifetime) continue;
 
-            if (newEnemies[i].health <= 0) {
-              const enemyType = newEnemies[i].type;
-              newScore += enemyType === 'boss' ? 500 : 100;
+        const nextX = fb.x + fb.vx * deltaTime * 0.06;
+        const nextY = fb.y + fb.vy * deltaTime * 0.06;
 
-              // Coin drop logic
-              let coinDrop = 0;
-              if (enemyType === 'slime') coinDrop = 5 + Math.floor(Math.random() * 5);
-              else if (enemyType === 'skeleton') coinDrop = 10 + Math.floor(Math.random() * 10);
-              else if (enemyType === 'ghost') coinDrop = 15 + Math.floor(Math.random() * 15);
-              else if (enemyType === 'boss') coinDrop = 100 + Math.floor(Math.random() * 100);
+        if (!isWalkable(state.map, nextX, nextY, fb.width, fb.height)) continue;
 
-              newCoins += coinDrop;
-
-              // Update personality
-              state.profile = updateProfile(state.profile, { type: 'kill' });
-            }
-            break;
-          }
-        }
+        validFireballs.push({ ...fb, x: nextX, y: nextY });
       }
+      newFireballs = validFireballs;
 
-      // Remove dead enemies
-      newEnemies = newEnemies.filter((e) => e.health > 0);
+      // Process Enemies (Movement, AI, Combat, Collision)
+      for (let i = 0; i < state.enemies.length; i++) {
+        let enemy = state.enemies[i];
+        if (enemy.health <= 0) continue; // Skip dead
 
-      // Update enemy AI
-      newEnemies = newEnemies.map((enemy) => {
+        // 1. Check Fireball Collisions
+        // (Spatial optimization: only check if fireball count > 0)
+        if (newFireballs.length > 0) {
+          let hit = false;
+          for (let f = 0; f < newFireballs.length; f++) {
+            const fb = newFireballs[f];
+            // Simple AABB overlap
+            if (
+              fb.x < enemy.x + enemy.width &&
+              fb.x + fb.width > enemy.x &&
+              fb.y < enemy.y + enemy.height &&
+              fb.y + fb.height > enemy.y
+            ) {
+              // Collision!
+              enemy = { ...enemy, health: enemy.health - fb.damage };
+              newFireballs.splice(f, 1); // Mutate local array for efficiency (it's a copy)
+              f--; // Adjust index
+
+              if (enemy.health <= 0) {
+                // Death logic
+                const enemyType = enemy.type;
+                newScore += enemyType === 'boss' ? 500 : 100;
+                let coinDrop = enemyType === 'boss' ? 100 :
+                  enemyType === 'ghost' ? 15 :
+                    enemyType === 'skeleton' ? 10 : 5;
+                // Random variance
+                coinDrop += Math.floor(Math.random() * coinDrop);
+                newCoins += coinDrop;
+                state.profile = updateProfile(state.profile, { type: 'kill' });
+                hit = true;
+                break; // Enemy dead, stop checking fireballs
+              }
+            }
+          }
+          if (enemy.health <= 0) continue; // Died from fireball, don't process AI
+        }
+
+        // 2. AI & Movement
         const dist = distance(enemy, newPlayer);
         const isAggro = dist < AGGRO_RANGE;
 
-        // Fleeing Logic (Morale Check)
+        if (!enemy.isAggro && isAggro) combatStarted = true;
+
+        // Flee or Chase
         const isFleeing = enemy.morale < 30 && enemy.health < enemy.maxHealth * 0.3;
+        let moveX = 0, moveY = 0;
 
         if (isFleeing) {
-          // Move AWAY from player
-          const dx = enemy.x - newPlayer.x; // Reversed vector
+          const dx = enemy.x - newPlayer.x;
           const dy = enemy.y - newPlayer.y;
           const len = Math.sqrt(dx * dx + dy * dy);
-
           if (len > 0) {
-            const moveX = (dx / len) * enemy.speed * 1.5 * deltaTime * 0.06; // Flee faster
-            const moveY = (dy / len) * enemy.speed * 1.5 * deltaTime * 0.06;
-
-            const newX = enemy.x + moveX;
-            const newY = enemy.y + moveY;
-
-            if (isWalkable(state.map, newX, enemy.y, enemy.width, enemy.height)) {
-              enemy = { ...enemy, x: newX };
-            }
-            if (isWalkable(state.map, enemy.x, newY, enemy.width, enemy.height)) {
-              enemy = { ...enemy, y: newY };
-            }
+            moveX = (dx / len) * enemy.speed * 1.5 * deltaTime * 0.06;
+            moveY = (dy / len) * enemy.speed * 1.5 * deltaTime * 0.06;
           }
-
-          // Chance to recover morale if far enough
+          // Morale recovery
           if (dist > AGGRO_RANGE * 1.5 && Math.random() < 0.01) {
             enemy = { ...enemy, morale: 50, isAggro: false };
           }
-
         } else if (isAggro) {
-          // Move towards player
           const dx = newPlayer.x - enemy.x;
           const dy = newPlayer.y - enemy.y;
           const len = Math.sqrt(dx * dx + dy * dy);
-
           if (len > 0) {
-            const moveX = (dx / len) * enemy.speed * deltaTime * 0.06;
-            const moveY = (dy / len) * enemy.speed * deltaTime * 0.06;
-
-            const newX = enemy.x + moveX;
-            const newY = enemy.y + moveY;
-
-            if (isWalkable(state.map, newX, enemy.y, enemy.width, enemy.height)) {
-              enemy = { ...enemy, x: newX };
-            }
-            if (isWalkable(state.map, enemy.x, newY, enemy.width, enemy.height)) {
-              enemy = { ...enemy, y: newY };
-            }
+            moveX = (dx / len) * enemy.speed * deltaTime * 0.06;
+            moveY = (dy / len) * enemy.speed * deltaTime * 0.06;
           }
         }
 
-        // Attack player if close enough
+        if (moveX !== 0 || moveY !== 0) {
+          const nextX = enemy.x + moveX;
+          const nextY = enemy.y + moveY;
+          let finalX = enemy.x;
+          let finalY = enemy.y;
+
+          // Independent axis collision check for sliding
+          if (isWalkable(state.map, nextX, enemy.y, enemy.width, enemy.height)) finalX = nextX;
+          if (isWalkable(state.map, finalX, nextY, enemy.width, enemy.height)) finalY = nextY;
+
+          enemy = { ...enemy, x: finalX, y: finalY };
+        }
+
+        // 3. Attack Logic
         if (dist < TILE_SIZE && currentTime - enemy.lastAttackTime > enemy.attackCooldown) {
+          const dmg = enemy.damage * state.roomModifiers.damageMultiplier;
           newPlayer = {
             ...newPlayer,
-            health: Math.max(0, newPlayer.health - enemy.damage),
-            lastDamageTime: currentTime,
+            health: Math.max(0, newPlayer.health - dmg),
+            lastDamageTime: currentTime
           };
           enemy = { ...enemy, lastAttackTime: currentTime };
         }
 
-        return { ...enemy, isAggro };
-      });
+        validEnemies.push({ ...enemy, isAggro: isAggro || enemy.isAggro });
+      }
+      newEnemies = validEnemies;
+
 
       // Update camera to follow player
       const targetCameraX = newPlayer.x - 400;
@@ -300,6 +318,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currentQuests: newQuests,
         coins: newCoins,
         profile: state.profile,
+        directorTrigger: combatStarted && !state.directorTrigger ? 'combat_start' : state.directorTrigger,
       };
     }
 
@@ -442,6 +461,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return {
           ...newState,
           score: state.score + 1000,
+          directorTrigger: 'new_level',
         };
       }
 
@@ -549,8 +569,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
 
         case 'modify_room': {
-          const { effect } = args;
-          logText = `Director: Room atmosphere shifts... ${effect}`;
+          const { effect, speedMultiplier, damageMultiplier, gravity, visibility } = args;
+
+          newState.roomModifiers = {
+            ...newState.roomModifiers,
+            speedMultiplier: speedMultiplier ?? newState.roomModifiers.speedMultiplier,
+            damageMultiplier: damageMultiplier ?? newState.roomModifiers.damageMultiplier,
+            gravity: gravity ?? newState.roomModifiers.gravity,
+            visibility: visibility ?? newState.roomModifiers.visibility,
+            atmosphere: effect || newState.roomModifiers.atmosphere
+          };
+
+          logText = `Director: Room atmosphere shifts... ${effect || 'Physics changed'}`;
           break;
         }
 
@@ -609,6 +639,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return newState;
+    }
+
+    case 'CLEAR_DIRECTOR_TRIGGER': {
+      return {
+        ...state,
+        directorTrigger: null
+      };
     }
 
     default:

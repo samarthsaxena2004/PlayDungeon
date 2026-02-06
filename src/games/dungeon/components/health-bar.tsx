@@ -1,6 +1,7 @@
 'use client';
 
 import { Heart } from 'lucide-react';
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 
 interface HealthBarProps {
@@ -9,7 +10,7 @@ interface HealthBarProps {
   score: number;
 }
 
-export function HealthBar({ health, maxHealth, score }: HealthBarProps) {
+export const HealthBar = memo(function HealthBar({ health, maxHealth, score }: HealthBarProps) {
   const healthPercent = (health / maxHealth) * 100;
   const isLow = healthPercent < 30;
   const isCritical = healthPercent < 15;
@@ -25,10 +26,10 @@ export function HealthBar({ health, maxHealth, score }: HealthBarProps) {
           >
             <Heart
               className={`w-5 h-5 ${isCritical
-                  ? 'text-destructive fill-destructive'
-                  : isLow
-                    ? 'text-warning fill-warning'
-                    : 'text-health fill-health'
+                ? 'text-destructive fill-destructive'
+                : isLow
+                  ? 'text-warning fill-warning'
+                  : 'text-health fill-health'
                 }`}
             />
           </motion.div>
@@ -37,10 +38,10 @@ export function HealthBar({ health, maxHealth, score }: HealthBarProps) {
             <div className="h-3 bg-muted rounded-full overflow-hidden">
               <motion.div
                 className={`h-full ${isCritical
-                    ? 'bg-destructive'
-                    : isLow
-                      ? 'bg-warning'
-                      : 'bg-health'
+                  ? 'bg-destructive'
+                  : isLow
+                    ? 'bg-warning'
+                    : 'bg-health'
                   }`}
                 initial={false}
                 animate={{ width: `${healthPercent}%` }}
@@ -64,4 +65,4 @@ export function HealthBar({ health, maxHealth, score }: HealthBarProps) {
       </div>
     </div>
   );
-}
+});
