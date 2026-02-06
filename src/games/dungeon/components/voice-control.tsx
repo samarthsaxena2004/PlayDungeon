@@ -201,6 +201,40 @@ export function VoiceControl({
     };
   }, []);
 
+  // Handle push-to-talk keybind (V)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (!isGameActive) return;
+
+      // Ignore if user is typing
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      if (e.key.toLowerCase() === 'v') {
+        if (!isListening && !isContinuousMode) {
+          startListening();
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'v') {
+        if (isListening && !isContinuousMode) {
+          stopListening();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isGameActive, isListening, isContinuousMode, startListening, stopListening]);
+
   if (!isSupported) {
     return null; // Voice not supported in this browser
   }
@@ -331,7 +365,7 @@ export function VoiceControl({
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
                   {isContinuousMode
                     ? 'Hands-free mode active - speak commands anytime'
-                    : 'Hold button to speak or enable hands-free mode'}
+                    : "Hold 'V' or button to speak / toggle hands-free"}
                 </p>
               </div>
 
