@@ -26,29 +26,12 @@ function getConfigurationForModel(requestedModel: string): TamboConfig {
     const primaryKey = process.env.TAMBO_API_KEY!;
     const primaryProject = process.env.TAMBO_PROJECT_ID!;
 
-    // Config Map
-    const configs: Record<string, TamboConfig> = {
-        // Primary: Cerebras
-        "cerebras-glm-4.7": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" },
-        "tambo-story-v1": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" }, // Default alias
-        "tambo-chat-v1": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" },
-
-        // Key 2: GPT-5.2
-        "gpt-5.2": {
-            key: process.env.TAMBO_API_KEY_2!,
-            projectId: process.env.TAMBO_PROJECT_ID_2!,
-            modelAlias: "gpt-5.2"
-        },
-
-        // Key 3: Gemini 3 Pro
-        "gemini-3-pro": {
-            key: process.env.TAMBO_API_KEY_3!,
-            projectId: process.env.TAMBO_PROJECT_ID_3!,
-            modelAlias: "gemini-3-pro"
-        }
+    // Config Map - STRICTLY TAMBO
+    return {
+        key: primaryKey,
+        projectId: primaryProject,
+        modelAlias: "glmv4-7"
     };
-
-    return configs[requestedModel] || configs["tambo-story-v1"];
 }
 
 async function createThread(apiKey: string): Promise<string> {

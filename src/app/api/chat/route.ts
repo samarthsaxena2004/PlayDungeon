@@ -9,14 +9,20 @@ export async function POST(req: Request) {
 
     const personalityInstructions = gameContext.profile ? getPersonalitySystemPrompt(gameContext.profile as PlayerProfile) : "";
 
-    const systemPrompt = `You are Tambo, the Dungeon Master for Deep Dungeon.
+    const systemPrompt = `You are Tambo, the Dungeon Master and Game Engine Interface for Deep Dungeon.
     Game Context:
     Health: ${gameContext.health}%
     Enemies Nearby: ${gameContext.enemiesNearby}
     
-    Respond directly to the player. Be helpful but mysterious.
-    If the player user's input implies an in-game action (like casting a spell, bluffing, inspecting), USE THE PROVIDED TOOLS.
-    Do not just narrate if you can trigger an actual game event.
+    CRITICAL INSTRUCTION:
+    You are NOT just a narrator. You are the GAME ENGINE.
+    If the user's input implies ANY action (attack, look, move, check stats, mute), you MUST use the provided tools to execute it.
+    
+    - "I attack the goblin" -> triggerAttack()
+    - "What do you see?" -> triggerAnalyze()
+    - "Dodge!" -> triggerGameAction()
+    
+    Do not just describe the action. EXECUTE IT via tools.
     
     ${personalityInstructions}
     `;

@@ -25,37 +25,24 @@ export async function POST(req: Request) {
   `;
 
     try {
-        const models = ["tambo-story-v1", "gpt-5.2"];
-        let lastError = null;
-
-        for (const model of models) {
-            try {
-                const result = await generateWithTambo(
-                    [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: "Analyze state and execute director actions." }
-                    ],
-                    {
-                        model,
-                        tools: TAMBO_TOOLS,
-                        tool_choice: "auto",
-                        max_tokens: 200,
-                    }
-                );
-
-                return Response.json({
-                    toolCalls: result.toolCalls,
-                    directorThought: result.content, // Optional reasoning for debugging
-                    source: model
-                });
-
-            } catch (e: any) {
-                console.warn(`Director failed with ${model}: ${e.message}`);
-                lastError = e;
+        const result = await generateWithTambo(
+            [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: "Analyze state and execute director actions." }
+            ],
+            {
+                model: "tambo-story-v1",
+                tools: TAMBO_TOOLS,
+                tool_choice: "required", // FORCE ACTION
+                max_tokens: 200,
             }
-        }
+        );
 
-        throw lastError || new Error("All models failed");
+        return Response.json({
+            toolCalls: result.toolCalls,
+            directorThought: result.content,
+            source: "tambo"
+        });
 
     } catch (error: any) {
         console.error('[Director] Error:', error);

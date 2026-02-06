@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scroll, MessageSquare, Sparkles, Swords, MapPin } from 'lucide-react';
+import { Scroll, MessageSquare, Sparkles, Swords, MapPin, AlertTriangle } from 'lucide-react';
 import type { StoryEntry } from '@/games/dungeon/lib/game-types';
 
 interface StoryPopupProps {
@@ -16,6 +16,7 @@ const typeIcons = {
   discovery: Sparkles,
   combat: Swords,
   milestone: MapPin,
+  danger: AlertTriangle,
 };
 
 const typeStyles = {
@@ -43,6 +44,11 @@ const typeStyles = {
     bg: 'bg-health/20',
     border: 'border-health',
     icon: 'text-health',
+  },
+  danger: {
+    bg: 'bg-red-500/20',
+    border: 'border-red-500',
+    icon: 'text-red-500 animate-pulse',
   },
 };
 

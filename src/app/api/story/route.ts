@@ -31,39 +31,30 @@ export async function POST(req: Request) {
     Narrate what happens next or describe the atmosphere.
     `;
 
-  const models = ["tambo-story-v1", "gpt-5.2"];
-  let lastError = null;
+  try {
+    const result = await generateWithTambo(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      {
+        model: "tambo-story-v1",
+        tools: TAMBO_TOOLS,
+        tool_choice: "auto",
+        max_tokens: 200,
+      }
+    );
 
-  for (const model of models) {
-    try {
-      console.log(`[Story] Attempting generation with ${model}...`);
-      const result = await generateWithTambo(
-        [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        {
-          model,
-          tools: TAMBO_TOOLS,
-          tool_choice: "auto",
-          max_tokens: 200,
-        }
-      );
-
-      return Response.json({
-        story: result.content || "The dungeon whispers...",
-        toolCalls: result.toolCalls,
-        source: model
-      });
-    } catch (error: any) {
-      console.error(`[Story] Generation failed with ${model}:`, error.message);
-      lastError = error;
-      // Continue to next model
-    }
+    return Response.json({
+      story: result.content || "The dungeon whispers...",
+      toolCalls: result.toolCalls,
+      source: "tambo"
+    });
+  } catch (error: any) {
+    console.error(`[Story] Generation failed:`, error.message);
+    return Response.json(
+      { story: `Tambo unavailable: ${error?.message || "Unknown error"}`, source: "System" },
+      { status: 503 }
+    );
   }
-
-  return Response.json(
-    { story: `Tambo unavailable: ${lastError?.message || "Unknown error"}`, source: "System" },
-    { status: 503 }
-  );
 }

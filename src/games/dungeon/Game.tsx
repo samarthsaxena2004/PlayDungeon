@@ -503,6 +503,7 @@ export default function GamePage() {
                   onInteract={handleInteract}
                   onStop={handleVoiceStop}
                   onComplexCommand={async (text) => {
+                    // VOICE INTENT UPGRADE: Route ambiguous commands to Tambo
                     try {
                       const response = await fetch('/api/chat', {
                         method: 'POST',
@@ -515,11 +516,8 @@ export default function GamePage() {
 
                       if (response.ok) {
                         const { reply, toolCalls } = await response.json();
-                        // If we have a reply, MAYBE show it via story log?
-                        if (reply) {
-                          addStoryEntry({ text: `Tambo: "${reply}"`, type: 'dialogue' });
-                        }
 
+                        // Execute any tools Tambo decided on
                         if (toolCalls && Array.isArray(toolCalls)) {
                           toolCalls.forEach((tc: any) => {
                             if (tc.function) {
@@ -527,10 +525,16 @@ export default function GamePage() {
                               applyAIAction(tc.function.name, args);
                             }
                           });
+                          playSound('storyNotification');
+                        }
+
+                        // Show Tambo's reply as a story log or toast
+                        if (reply) {
+                          addStoryEntry({ text: `Tambo: "${reply}"`, type: 'dialogue' });
                         }
                       }
                     } catch (e) {
-                      console.error('Complex command failed', e);
+                      console.error('Voice intent failed', e);
                     }
                   }}
                   isGameActive={gameStarted && state.gameStatus === 'playing'}

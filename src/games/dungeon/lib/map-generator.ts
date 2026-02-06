@@ -173,6 +173,7 @@ export function generateDungeonMap(
       isAggro: false,
       lastAttackTime: 0,
       attackCooldown: getEnemyAttackCooldown(enemyType),
+      morale: 100,
     });
   }
 
@@ -196,6 +197,7 @@ export function generateDungeonMap(
       isAggro: false,
       lastAttackTime: 0,
       attackCooldown: 1500,
+      morale: 100,
     });
   }
 
@@ -253,29 +255,29 @@ export function generateDungeonMap(
   };
 }
 
-function getEnemyHealth(type: Enemy['type'], level: number): number {
+function getEnemyHealth(type: string, level: number): number {
   // Drastically reduced health for Level 1 Slimes
-  const base = { slime: 20, skeleton: 50, ghost: 40, boss: 150 };
-  const scaling = { slime: 5, skeleton: 10, ghost: 10, boss: 50 };
-  return base[type] + (level - 1) * scaling[type];
+  const base: Record<string, number> = { slime: 20, skeleton: 50, ghost: 40, boss: 150 };
+  const scaling: Record<string, number> = { slime: 5, skeleton: 10, ghost: 10, boss: 50 };
+  return (base[type] || base['slime']) + (level - 1) * (scaling[type] || scaling['slime']);
 }
 
-function getEnemySpeed(type: Enemy['type']): number {
-  const speeds = { slime: 0.8, skeleton: 1.8, ghost: 2.2, boss: 1.5 };
-  return speeds[type];
+function getEnemySpeed(type: string): number {
+  const speeds: Record<string, number> = { slime: 0.8, skeleton: 1.8, ghost: 2.2, boss: 1.5 };
+  return speeds[type] || speeds['slime'];
 }
 
-function getEnemyDamage(type: Enemy['type'], level: number): number {
+function getEnemyDamage(type: string, level: number): number {
   // Very low damage for Level 1
-  const base = { slime: 3, skeleton: 10, ghost: 8, boss: 25 };
-  const scaling = { slime: 1, skeleton: 2, ghost: 2, boss: 5 };
-  return base[type] + (level - 1) * scaling[type];
+  const base: Record<string, number> = { slime: 3, skeleton: 10, ghost: 8, boss: 25 };
+  const scaling: Record<string, number> = { slime: 1, skeleton: 2, ghost: 2, boss: 5 };
+  return (base[type] || base['slime']) + (level - 1) * (scaling[type] || scaling['slime']);
 }
 
-function getEnemyAttackCooldown(type: Enemy['type']): number {
+function getEnemyAttackCooldown(type: string): number {
   // Slower attacks for slimes
-  const cooldowns = { slime: 2500, skeleton: 1500, ghost: 1000, boss: 1200 };
-  return cooldowns[type];
+  const cooldowns: Record<string, number> = { slime: 2500, skeleton: 1500, ghost: 1000, boss: 1200 };
+  return cooldowns[type] || cooldowns['slime'];
 }
 
 export function isWalkable(map: GameMap, x: number, y: number, width: number, height: number): boolean {
