@@ -1,0 +1,195 @@
+import { TAMBO_TOOLS } from "./tambo-tools";
+
+const TAMBO_BASE_URL = "https://api.tambo.co";
+
+interface TamboConfig {
+    key: string;
+    projectId: string; // Not used in URL, but implied by key
+    modelAlias: string; // Used as context or just implied by key
+}
+
+interface TamboRequestOptions {
+    model?: string;
+    max_tokens?: number;
+    temperature?: number;
+    tools?: any[];
+    tool_choice?: "auto" | "none" | "required";
+}
+
+export interface TamboResponse {
+    content: string;
+    toolCalls: any[];
+    role: string;
+}
+
+function getConfigurationForModel(requestedModel: string): TamboConfig {
+    const primaryKey = process.env.TAMBO_API_KEY!;
+    const primaryProject = process.env.TAMBO_PROJECT_ID!;
+
+    // Config Map
+    const configs: Record<string, TamboConfig> = {
+        // Primary: Cerebras
+        "cerebras-glm-4.7": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" },
+        "tambo-story-v1": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" }, // Default alias
+        "tambo-chat-v1": { key: primaryKey, projectId: primaryProject, modelAlias: "glmv4-7" },
+
+        // Key 2: GPT-5.2
+        "gpt-5.2": {
+            key: process.env.TAMBO_API_KEY_2!,
+            projectId: process.env.TAMBO_PROJECT_ID_2!,
+            modelAlias: "gpt-5.2"
+        },
+
+        // Key 3: Gemini 3 Pro
+        "gemini-3-pro": {
+            key: process.env.TAMBO_API_KEY_3!,
+            projectId: process.env.TAMBO_PROJECT_ID_3!,
+            modelAlias: "gemini-3-pro"
+        }
+    };
+
+    return configs[requestedModel] || configs["tambo-story-v1"];
+}
+
+async function createThread(apiKey: string): Promise<string> {
+    const response = await fetch(`${TAMBO_BASE_URL}/threads`, {
+        method: "POST",
+        headers: {
+            "x-api-key": apiKey,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            projectId: getConfigurationForModel("tambo-story-v1").projectId, // Default project if not specified
+            metadata: {
+                source: "game-story-engine"
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to create thread: ${response.status} ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    return data.id;
+}
+
+export async function generateWithTambo(
+    messages: { role: string; content: string }[],
+    options: TamboRequestOptions = {}
+): Promise<TamboResponse> {
+    const requestedModel = options.model || "tambo-story-v1";
+    const config = getConfigurationForModel(requestedModel);
+
+    if (!messages.length) throw new Error("Messages array cannot be empty");
+
+    try {
+        // 1. Create a transient thread
+        const threadId = await createThread(config.key);
+
+        // 2. Prepare payload
+        const messageToAppend = messages[messages.length - 1];
+        const initialMessages = messages.slice(0, messages.length - 1).map(m => ({
+            role: m.role,
+            content: m.content
+        }));
+
+        // 3. Advance thread (Streaming)
+        // The API now requires /advancestream
+        const advanceUrl = `${TAMBO_BASE_URL}/threads/${threadId}/advancestream`;
+
+        const requestBody = {
+            initialMessages,
+            messageToAppend: {
+                role: messageToAppend.role,
+                content: [{ type: "text", text: messageToAppend.content }]
+            }
+        };
+
+        // Add tool definitions if present
+        if (options.tools && options.tools.length > 0) {
+            (requestBody as any).tools = options.tools;
+            if (options.tool_choice) {
+                (requestBody as any).tool_choice = options.tool_choice;
+            }
+        }
+
+        const response = await fetch(advanceUrl, {
+            method: "POST",
+            headers: {
+                "x-api-key": config.key,
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream"
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Tambo Advance failed: ${response.status} ${await response.text()}`);
+        }
+
+        // 4. Parse SSE Stream
+        if (!response.body) {
+            throw new Error("No response body received from Tambo stream");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let assistantContent = "";
+        const toolCalls: any[] = [];
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+
+            // Pending line stays in buffer
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                if (line.trim() === "" || line.startsWith(":")) continue;
+                if (line.startsWith("data: ")) {
+                    const dataStr = line.slice(6);
+                    if (dataStr.trim() === "DONE") continue;
+
+                    try {
+                        const data = JSON.parse(dataStr);
+                        // Access 'messageAdded'
+                        if (data.messageAdded) {
+                            const msg = data.messageAdded;
+
+                            // Handle content
+                            if (msg.content) {
+                                if (Array.isArray(msg.content)) {
+                                    assistantContent = msg.content.map((c: any) => c.text || "").join("");
+                                } else if (typeof msg.content === 'string') {
+                                    assistantContent = msg.content;
+                                }
+                            }
+
+                            // Handle tool calls
+                            if (msg.toolCalls && Array.isArray(msg.toolCalls)) {
+                                toolCalls.push(...msg.toolCalls);
+                            }
+                        }
+                    } catch (e) {
+                        // ignore parse errors for partial chunks
+                    }
+                }
+            }
+        }
+
+        return {
+            content: assistantContent,
+            toolCalls: toolCalls,
+            role: "assistant"
+        };
+
+    } catch (error) {
+        console.error(`[Tambo] Error using model ${requestedModel} (Project ${config.projectId}):`, error);
+        throw error;
+    }
+}

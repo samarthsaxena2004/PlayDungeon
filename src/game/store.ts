@@ -57,58 +57,73 @@ export type GameStore = {
 
 // ─── STORE ──────────────────────────────────────
 
-export const useGameStore = create<GameStore>((set) => ({
-    messages: [{
-        id: 'init-1',
-        role: 'assistant',
-        content: "Welcome to the Deep Dungeon. The air is cold and stale. What do you do?",
-        timestamp: Date.now()
-    }],
+import { persist } from 'zustand/middleware';
 
-    stats: {
-        health: 100,
-        maxHealth: 100,
-        mana: 50,
-        maxMana: 50,
-        gold: 0,
-        level: 1,
-        xp: 0
-    },
+export const useGameStore = create<GameStore>()(
+    persist(
+        (set) => ({
+            messages: [{
+                id: 'init-1',
+                role: 'assistant',
+                content: "Welcome to the Deep Dungeon. The air is cold and stale. What do you do?",
+                timestamp: Date.now()
+            }],
 
-    meta: {
-        location: "Entrance Hall",
-        dangerLevel: 0,
-        mood: 'mysterious',
-        turn: 0
-    },
+            stats: {
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                gold: 0,
+                level: 1,
+                xp: 0
+            },
 
-    inventory: [],
-    activeScene: [],
-    activeGame: 'dungeon', // Start directly in Dungeon
-    isThinking: false,
+            meta: {
+                location: "Entrance Hall",
+                dangerLevel: 0,
+                mood: 'mysterious',
+                turn: 0
+            },
 
-    addMessage: (msg) => set((state) => ({
-        messages: [...state.messages, { ...msg, id: Math.random().toString(), timestamp: Date.now() }]
-    })),
+            inventory: [],
+            activeScene: [],
+            activeGame: 'dungeon', // Start directly in Dungeon
+            isThinking: false,
 
-    updateStats: (diff) => set((state) => ({
-        stats: { ...state.stats, ...diff }
-    })),
+            addMessage: (msg) => set((state) => ({
+                messages: [...state.messages, { ...msg, id: Math.random().toString(), timestamp: Date.now() }]
+            })),
 
-    updateMeta: (diff) => set((state) => ({
-        meta: { ...state.meta, ...diff }
-    })),
+            updateStats: (diff) => set((state) => ({
+                stats: { ...state.stats, ...diff }
+            })),
 
-    setScene: (nodes) => set({ activeScene: nodes }),
+            updateMeta: (diff) => set((state) => ({
+                meta: { ...state.meta, ...diff }
+            })),
 
-    setThinking: (val) => set({ isThinking: val }),
+            setScene: (nodes) => set({ activeScene: nodes }),
 
-    setActiveGame: (gameId) => set({ activeGame: gameId }),
+            setThinking: (val) => set({ isThinking: val }),
 
-    resetGame: () => set({
-        messages: [],
-        stats: { health: 100, maxHealth: 100, mana: 50, maxMana: 50, gold: 0, level: 1, xp: 0 },
-        inventory: [],
-        activeScene: []
-    })
-}));
+            setActiveGame: (gameId) => set({ activeGame: gameId }),
+
+            resetGame: () => set({
+                messages: [],
+                stats: { health: 100, maxHealth: 100, mana: 50, maxMana: 50, gold: 0, level: 1, xp: 0 },
+                inventory: [],
+                activeScene: []
+            })
+        }),
+        {
+            name: 'play-dungeon-storage', // name of the item in the storage (must be unique)
+            partialize: (state) => ({
+                stats: state.stats,
+                meta: state.meta,
+                inventory: state.inventory,
+                messages: state.messages
+            }), // Pick what to persist
+        }
+    )
+);

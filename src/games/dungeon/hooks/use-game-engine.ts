@@ -1,8 +1,9 @@
 'use client';
 
 import { useReducer, useCallback, useRef, useEffect } from 'react';
-import type { GameState, GameAction, Player, Fireball, Enemy, Controls, StoryEntry } from '@/games/dungeon/lib/game-types';
+import type { GameState, GameAction, Player, Fireball, Enemy, Controls, AIAction, StoryEntry } from '@/games/dungeon/lib/game-types';
 import { generateDungeonMap, isWalkable } from '@/games/dungeon/lib/map-generator';
+import { INITIAL_PROFILE, updateProfile } from '@/lib/personality';
 
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 30;
@@ -18,7 +19,7 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function createInitialState(level: number = 1): GameState {
+function createInitialState(level: number = 1, initialGold: number = 0): GameState {
   const { map, spawnPoint, enemies, milestones } = generateDungeonMap(
     MAP_WIDTH,
     MAP_HEIGHT,
@@ -52,10 +53,10 @@ function createInitialState(level: number = 1): GameState {
     storyLog: [
       {
         id: generateId(),
-        text: `Level ${level}: You descend deeper into the dungeon...`,
+        text: `Level ${level}: The Director watches...`,
         timestamp: Date.now(),
         type: 'narration',
-      },
+      }
     ],
     currentQuests: [
       {
@@ -86,7 +87,8 @@ function createInitialState(level: number = 1): GameState {
     gameStatus: 'playing',
     score: 0,
     level,
-    coins: 0,
+    coins: initialGold,
+    profile: INITIAL_PROFILE,
   };
 }
 
@@ -115,7 +117,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newPlayer = { ...state.player };
       let newEnemies = [...state.enemies];
       let newFireballs = [...state.fireballs];
-      const newStoryLog = [...state.storyLog];
       let newScore = state.score;
       let newCoins = state.coins;
       const currentTime = Date.now();
@@ -172,15 +173,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               else if (enemyType === 'ghost') coinDrop = 15 + Math.floor(Math.random() * 15);
               else if (enemyType === 'boss') coinDrop = 100 + Math.floor(Math.random() * 100);
 
-              state.coins = (state.coins || 0) + coinDrop; // Direct mutation ok in this block context as we reconstruct state at end, but clearer to separate.
-              // Actually we need to return new coin state. Will handle variable 'newCoins' outside.
+              newCoins += coinDrop;
 
-              newStoryLog.push({
-                id: generateId(),
-                text: `You defeated the ${newEnemies[i].type} and found ${coinDrop} coins!`,
-                timestamp: currentTime,
-                type: 'combat',
-              });
+              // Update personality
+              state.profile = updateProfile(state.profile, { type: 'kill' });
             }
             break;
           }
@@ -195,7 +191,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const dist = distance(enemy, newPlayer);
         const isAggro = dist < AGGRO_RANGE;
 
-        if (isAggro) {
+        // Fleeing Logic (Morale Check)
+        const isFleeing = enemy.morale < 30 && enemy.health < enemy.maxHealth * 0.3;
+
+        if (isFleeing) {
+          // Move AWAY from player
+          const dx = enemy.x - newPlayer.x; // Reversed vector
+          const dy = enemy.y - newPlayer.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+
+          if (len > 0) {
+            const moveX = (dx / len) * enemy.speed * 1.5 * deltaTime * 0.06; // Flee faster
+            const moveY = (dy / len) * enemy.speed * 1.5 * deltaTime * 0.06;
+
+            const newX = enemy.x + moveX;
+            const newY = enemy.y + moveY;
+
+            if (isWalkable(state.map, newX, enemy.y, enemy.width, enemy.height)) {
+              enemy = { ...enemy, x: newX };
+            }
+            if (isWalkable(state.map, enemy.x, newY, enemy.width, enemy.height)) {
+              enemy = { ...enemy, y: newY };
+            }
+          }
+
+          // Chance to recover morale if far enough
+          if (dist > AGGRO_RANGE * 1.5 && Math.random() < 0.01) {
+            enemy = { ...enemy, morale: 50, isAggro: false };
+          }
+
+        } else if (isAggro) {
           // Move towards player
           const dx = newPlayer.x - enemy.x;
           const dy = newPlayer.y - enemy.y;
@@ -215,23 +240,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               enemy = { ...enemy, y: newY };
             }
           }
+        }
 
-          // Attack player if close enough
-          if (dist < TILE_SIZE && currentTime - enemy.lastAttackTime > enemy.attackCooldown) {
-            newPlayer = {
-              ...newPlayer,
-              health: Math.max(0, newPlayer.health - enemy.damage),
-              lastDamageTime: currentTime,
-            };
-            enemy = { ...enemy, lastAttackTime: currentTime };
-
-            newStoryLog.push({
-              id: generateId(),
-              text: `The ${enemy.type} strikes you for ${enemy.damage} damage!`,
-              timestamp: currentTime,
-              type: 'combat',
-            });
-          }
+        // Attack player if close enough
+        if (dist < TILE_SIZE && currentTime - enemy.lastAttackTime > enemy.attackCooldown) {
+          newPlayer = {
+            ...newPlayer,
+            health: Math.max(0, newPlayer.health - enemy.damage),
+            lastDamageTime: currentTime,
+          };
+          enemy = { ...enemy, lastAttackTime: currentTime };
         }
 
         return { ...enemy, isAggro };
@@ -264,17 +282,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state,
           player: newPlayer,
           gameStatus: 'gameover',
-          storyLog: [
-            ...newStoryLog,
-            {
-              id: generateId(),
-              text: 'You have fallen in the dungeon...',
-              timestamp: currentTime,
-              type: 'narration',
-            },
-          ],
         };
       }
+
+      // Add combat log if needed - Keeping it removed to focus on Director Logs for now, 
+      // or we can add it back if user wants *regular* logs too.
+      // User said: "generic simple game updates".
+      // Let's re-add basic combat logs but throttle them or keep them simple.
+      // For now, I'll assume they mostly meant the AI ones.
 
       return {
         ...state,
@@ -282,9 +297,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         enemies: newEnemies,
         fireballs: newFireballs,
         camera: newCamera,
-        storyLog: newStoryLog.slice(-50), // Keep last 50 entries
         currentQuests: newQuests,
         coins: newCoins,
+        profile: state.profile,
       };
     }
 
@@ -385,7 +400,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.gameStatus !== 'playing') return state;
 
       const newMilestones = [...state.milestones];
-      const newStoryLog = [...state.storyLog];
       let newQuests = [...state.currentQuests];
       let newLevel = state.level;
       let shouldAdvanceLevel = false;
@@ -398,12 +412,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (dist < milestone.interactionRadius) {
           newMilestones[i] = { ...milestone, collected: true };
 
-          newStoryLog.push({
-            id: generateId(),
-            text: milestone.storyTrigger,
-            timestamp: Date.now(),
-            type: milestone.type === 'portal' ? 'milestone' : 'discovery',
-          });
+          // Update personality
+          if (milestone.type === 'treasure' || milestone.type === 'scroll') {
+            state.profile = updateProfile(state.profile, { type: 'loot' });
+          } else {
+            state.profile = updateProfile(state.profile, { type: 'explore' });
+          }
 
           if (milestone.type === 'portal') {
             // Check if all enemies defeated
@@ -414,12 +428,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 q.id === 'find-portal' ? { ...q, progress: 1, completed: true } : q
               );
             } else {
-              newStoryLog.push({
-                id: generateId(),
-                text: 'The portal is sealed! Defeat all enemies first.',
-                timestamp: Date.now(),
-                type: 'narration',
-              });
               newMilestones[i] = { ...milestone, collected: false };
             }
           }
@@ -430,26 +438,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (shouldAdvanceLevel) {
         // Generate new level
-        const newState = createInitialState(newLevel);
+        const newState = createInitialState(newLevel, state.coins); // Pass accumulated coins to next level
         return {
           ...newState,
           score: state.score + 1000,
-          storyLog: [
-            ...newStoryLog,
-            {
-              id: generateId(),
-              text: `You descend to level ${newLevel}...`,
-              timestamp: Date.now(),
-              type: 'narration',
-            },
-          ],
         };
       }
 
       return {
         ...state,
         milestones: newMilestones,
-        storyLog: newStoryLog.slice(-50),
         currentQuests: newQuests,
       };
     }
@@ -469,7 +467,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESET_GAME': {
-      return createInitialState(1);
+      return createInitialState(1, 0); // Reset implies 0 gold
     }
 
     case 'SET_GAME_STATUS': {
@@ -507,13 +505,119 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case 'APPLY_AI_ACTION': {
+      const { tool, args } = action;
+      let newState = { ...state };
+      let logText = "";
+
+      switch (tool) {
+        case 'spawn_entity': {
+          const { type, position, personality } = args;
+          // Use player position if no position provided, but offset
+          const spawnX = position?.x ? position.x * TILE_SIZE : state.player.x + (Math.random() > 0.5 ? 200 : -200);
+          const spawnY = position?.y ? position.y * TILE_SIZE : state.player.y + (Math.random() > 0.5 ? 200 : -200);
+
+          const newEnemy: Enemy = {
+            id: generateId(),
+            type: type || 'slime',
+            x: spawnX,
+            y: spawnY,
+            width: TILE_SIZE,
+            height: TILE_SIZE,
+            health: type === 'boss' ? 200 : 50,
+            maxHealth: type === 'boss' ? 200 : 50,
+            speed: type === 'ghost' ? PLAYER_SPEED * 0.8 : PLAYER_SPEED * 0.5,
+            damage: type === 'boss' ? 20 : 10,
+            morale: 100,
+            attackCooldown: 1000,
+            lastAttackTime: 0,
+            isAggro: true,
+            direction: 'down'
+          };
+
+          newState.enemies = [...newState.enemies, newEnemy];
+          logText = `Director: Spawning ${type} nearby!`;
+          break;
+        }
+
+        case 'grant_loot': {
+          const { rarity, itemType } = args;
+          const value = rarity === 'legendary' ? 100 : rarity === 'epic' ? 50 : 20;
+          newState.coins = (newState.coins || 0) + value;
+          logText = `Director: Granting ${rarity} ${itemType} (+${value} gold)`;
+          break;
+        }
+
+        case 'modify_room': {
+          const { effect } = args;
+          logText = `Director: Room atmosphere shifts... ${effect}`;
+          break;
+        }
+
+        case 'social_interaction': {
+          const { target, intent, success } = args;
+
+          if (success) {
+            newState.enemies = newState.enemies.map(e => ({
+              ...e,
+              isAggro: false,
+              morale: 0
+            }));
+            newState.score += 50;
+            state.profile = updateProfile(state.profile, { type: 'talk' });
+            logText = `Social Success: Enemies calmed down.`;
+          } else {
+            newState.enemies = newState.enemies.map(e => ({
+              ...e,
+              isAggro: true,
+              speed: e.speed * 1.2,
+              morale: 100
+            }));
+            state.profile = updateProfile(state.profile, { type: 'kill' });
+            logText = `Social Failed: Enemies enraged!`;
+          }
+          break;
+        }
+
+        case 'create_quest': {
+          const { title, description, target_count, reward_gold } = args;
+          const newQuest = {
+            id: generateId(),
+            title,
+            description,
+            completed: false,
+            progress: 0,
+            target: target_count,
+            reward: { gold: reward_gold }
+          };
+          newState.currentQuests = [...newState.currentQuests, newQuest];
+          logText = `New Quest: ${title}`;
+          break;
+        }
+      }
+
+      if (logText) {
+        newState.storyLog = [
+          ...newState.storyLog,
+          {
+            id: generateId(),
+            text: logText,
+            timestamp: Date.now(),
+            type: 'danger' as const // Use 'danger' style for Director updates
+          }
+        ].slice(-50);
+      }
+
+      return newState;
+    }
+
     default:
       return state;
   }
 }
 
-export function useGameEngine() {
-  const [state, dispatch] = useReducer(gameReducer, null, () => createInitialState(1));
+export function useGameEngine(initialLevel: number = 1, initialGold: number = 0) {
+  const [state, dispatch] = useReducer(gameReducer, null, () => createInitialState(initialLevel, initialGold));
   const controlsRef = useRef<Controls>({
     up: false,
     down: false,
@@ -533,14 +637,12 @@ export function useGameEngine() {
     const deltaTime = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
 
-    // Handle movement
     const controls = controlsRef.current;
     if (controls.up) dispatch({ type: 'MOVE_PLAYER', direction: 'up' });
     if (controls.down) dispatch({ type: 'MOVE_PLAYER', direction: 'down' });
     if (controls.left) dispatch({ type: 'MOVE_PLAYER', direction: 'left' });
     if (controls.right) dispatch({ type: 'MOVE_PLAYER', direction: 'right' });
 
-    // Update game state
     dispatch({ type: 'UPDATE_TICK', deltaTime });
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
@@ -582,13 +684,8 @@ export function useGameEngine() {
     dispatch({ type: 'ADD_STORY', entry });
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
+  const applyAIAction = useCallback((tool: string, args: any) => {
+    dispatch({ type: 'APPLY_AI_ACTION', tool, args });
   }, []);
 
   return {
@@ -601,5 +698,6 @@ export function useGameEngine() {
     startGame,
     stopGame,
     addStoryEntry,
+    applyAIAction
   };
 }

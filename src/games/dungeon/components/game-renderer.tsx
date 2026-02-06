@@ -265,6 +265,24 @@ function GameRendererComponent({ state }: GameRendererProps) {
         ctx.arc(screenX + enemy.width / 2, screenY + enemy.height / 2, enemy.width / 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+      } else {
+        // Custom/Unknown entity fallback
+        ctx.beginPath();
+        ctx.fillStyle = '#ff00ff'; // Magenta for custom
+        // Diamond shape
+        ctx.moveTo(screenX + enemy.width / 2, screenY);
+        ctx.lineTo(screenX + enemy.width, screenY + enemy.height / 2);
+        ctx.lineTo(screenX + enemy.width / 2, screenY + enemy.height);
+        ctx.lineTo(screenX, screenY + enemy.height / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Question mark?
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', screenX + enemy.width / 2, screenY + enemy.height / 2);
       }
 
       // Draw health bar for damaged enemies

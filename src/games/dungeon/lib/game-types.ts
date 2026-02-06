@@ -35,12 +35,15 @@ export interface Player extends Entity {
 export interface Enemy extends Entity {
   health: number;
   maxHealth: number;
-  type: 'slime' | 'skeleton' | 'ghost' | 'boss';
+  type: string; // 'slime' | 'skeleton' | 'ghost' | 'boss' | custom
+  visualEmoji?: string; // Optional visual representation for custom mobs
   speed: number;
   damage: number;
+  morale: number; // 0-100, low morale causes fleeing
   isAggro: boolean;
   lastAttackTime: number;
   attackCooldown: number;
+  direction?: 'up' | 'down' | 'left' | 'right';
 }
 
 export interface Fireball extends Entity, Velocity {
@@ -70,6 +73,8 @@ export interface GameMap {
   tiles: Tile[][];
 }
 
+import { PlayerProfile } from '@/lib/personality';
+
 export interface GameState {
   player: Player;
   enemies: Enemy[];
@@ -83,6 +88,7 @@ export interface GameState {
   score: number;
   level: number;
   coins: number;
+  profile: PlayerProfile;
 }
 
 export interface Quest {
@@ -92,13 +98,22 @@ export interface Quest {
   completed: boolean;
   progress: number;
   target: number;
+  reward?: {
+    gold: number;
+    item?: string;
+  };
 }
 
 export interface StoryEntry {
   id: string;
   text: string;
   timestamp: number;
-  type: 'narration' | 'dialogue' | 'discovery' | 'combat' | 'milestone';
+  type: 'narration' | 'dialogue' | 'discovery' | 'combat' | 'milestone' | 'danger';
+}
+
+export interface AIAction {
+  tool: string;
+  args: any;
 }
 
 export interface Controls {
@@ -124,4 +139,5 @@ export type GameAction =
   | { type: 'COMPLETE_QUEST'; questId: string }
   | { type: 'RESET_GAME' }
   | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] }
-  | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } };
+  | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } }
+  | { type: 'APPLY_AI_ACTION'; tool: string; args: any };

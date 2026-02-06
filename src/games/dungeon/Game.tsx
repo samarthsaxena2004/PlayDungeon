@@ -12,7 +12,6 @@ import { HealthBar } from '@/games/dungeon/components/health-bar';
 import { GameOverScreen } from '@/games/dungeon/components/game-over-screen';
 import { DamageOverlay } from '@/games/dungeon/components/damage-overlay';
 import { StoreModal, type StoreItem } from '@/games/dungeon/components/store-modal';
-import { useShopkeeper } from '@/games/dungeon/hooks/use-shopkeeper';
 import dynamic from 'next/dynamic';
 
 const TamboGameChat = dynamic(
@@ -21,14 +20,12 @@ const TamboGameChat = dynamic(
 );
 import { TamboProviderWrapper } from '@/games/dungeon/components/tambo-provider-wrapper';
 import { AnimatedBackdrop } from '@/games/dungeon/components/animated-backdrop';
-import { StoryPopup } from '@/games/dungeon/components/story-popup';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
+import { StoryPopup } from '@/games/dungeon/components/story-popup';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Info, Keyboard, ArrowLeft, ShoppingBag, MessageCircle, Sparkles } from 'lucide-react';
+import { Play, Info, ShoppingBag, MessageCircle, Sparkles, Zap, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-
 
 type KeyMap = {
   [key: string]: 'up' | 'down' | 'left' | 'right' | 'attack' | 'interact';
@@ -48,8 +45,15 @@ const KEY_MAP: KeyMap = {
 };
 
 export default function GamePage() {
-  const { setActiveGame } = useGameStore();
-  const { state, dispatch, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry } = useGameEngine();
+  const { setActiveGame, stats, updateStats } = useGameStore();
+  const { state, dispatch, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry, applyAIAction } = useGameEngine(1, stats.gold);
+
+  // Sync engine coins back to global store
+  useEffect(() => {
+    if (state.coins !== stats.gold) {
+      updateStats({ gold: state.coins });
+    }
+  }, [state.coins, updateStats, stats.gold]);
   const {
     initializeAudio,
     playSound,
@@ -64,10 +68,9 @@ export default function GamePage() {
   const [showControls, setShowControls] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showTamboChat, setShowTamboChat] = useState(false);
-  const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const [directorActive, setDirectorActive] = useState(false);
   const [playerName, setPlayerName] = useState('');
-  const lastStoryTriggerRef = useRef<number>(0);
-  const storyQueueRef = useRef<string[]>([]);
+  const lastDirectorTimeRef = useRef<number>(0);
   const lastHealthRef = useRef(100);
   const lastEnemyCountRef = useRef(0);
   const lastLevelRef = useRef(1);
@@ -114,37 +117,30 @@ export default function GamePage() {
 
   // Voice control handlers
   const handleVoiceMove = useCallback((direction: 'up' | 'down' | 'left' | 'right', steps: number) => {
-    // Move in direction for specified steps
     for (let i = 0; i < steps; i++) {
       setControl(direction, true);
     }
-    // Release after a brief delay
     setTimeout(() => setControl(direction, false), 50);
   }, [setControl]);
 
   const handleVoiceTurn = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    // Briefly press direction to change facing
     setControl(direction, true);
     setTimeout(() => setControl(direction, false), 50);
   }, [setControl]);
 
   const handleVoiceAttack = useCallback((count: number) => {
-    // Single attack - the voice control handles multiple
     handleAttack();
   }, [handleAttack]);
 
   const handleVoiceStop = useCallback(() => {
-    // Stop all movement
     setControl('up', false);
     setControl('down', false);
     setControl('left', false);
     setControl('right', false);
   }, [setControl]);
 
-  // Handle interact with sound
   const handleInteract = useCallback(() => {
     interact();
-    // Check what we're interacting with for appropriate sound
     const nearbyMilestone = state.milestones.find(m => {
       if (m.collected) return false;
       const dx = state.player.x - m.x;
@@ -166,8 +162,6 @@ export default function GamePage() {
   // Handle keyboard input
   useEffect(() => {
     if (!gameStarted) return;
-
-    // Helper to check if user is typing in an input
     const isTyping = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
@@ -175,7 +169,6 @@ export default function GamePage() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTyping(e)) return;
-
       const key = e.key.toLowerCase();
       const control = KEY_MAP[key];
 
@@ -193,10 +186,8 @@ export default function GamePage() {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (isTyping(e)) return;
-
       const key = e.key.toLowerCase();
       const control = KEY_MAP[key];
-
       if (control && control !== 'attack' && control !== 'interact') {
         setControl(control, false);
       }
@@ -204,53 +195,72 @@ export default function GamePage() {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [gameStarted, setControl, handleAttack, handleInteract]);
 
-  // Generate AI story based on game events
-  const generateStory = useCallback(async (context: string) => {
-    const now = Date.now();
-    // Throttle story generation to once every 10 seconds
-    if (now - lastStoryTriggerRef.current < 10000) {
-      storyQueueRef.current.push(context);
-      return;
-    }
 
-    lastStoryTriggerRef.current = now;
-    setIsGeneratingStory(true);
+  // AI DIRECTOR LOGIC
+  const runDirector = useCallback(async () => {
+    const now = Date.now();
+    // Cooldown: 15 seconds
+    if (now - lastDirectorTimeRef.current < 15000) return;
+
+    lastDirectorTimeRef.current = now;
+    setDirectorActive(true);
 
     try {
-      const recentEvents = state.storyLog.slice(-5).map(e => e.text);
-      const response = await fetch('/api/story', {
+      const response = await fetch('/api/director', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          context,
-          recentEvents,
-          level: state.level,
-          health: state.player.health,
-          enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
-          playerName,
-        }),
+          playerState: {
+            health: state.player.health,
+            gold: state.coins,
+            x: state.player.x,
+            y: state.player.y
+          },
+          metrics: {
+            kills: state.score / 100, // Roughly
+            timeAlive: 60 // Mock for now
+          },
+          mapState: {} // Add map analysis here later
+        })
       });
 
       if (response.ok) {
-        const { story } = await response.json();
-        addStoryEntry({ text: story, type: 'narration' });
+        const { toolCalls } = await response.json();
+        if (toolCalls && Array.isArray(toolCalls)) {
+          toolCalls.forEach((tc: any) => {
+            if (tc.function) {
+              try {
+                const args = JSON.parse(tc.function.arguments);
+                applyAIAction(tc.function.name, args);
+                playSound('storyNotification'); // Feedback for Director action
+              } catch (e) { console.error(e); }
+            }
+          });
+        }
       }
-    } catch (error) {
-      console.error('[v0] Story generation failed:', error);
+    } catch (e) {
+      console.error("Director offline:", e);
     } finally {
-      setIsGeneratingStory(false);
+      setDirectorActive(false);
     }
-  }, [state.storyLog, state.level, state.player.health, state.currentQuests, addStoryEntry, playerName]);
+  }, [state.player.health, state.coins, state.player.x, state.player.y, state.score, applyAIAction, playSound]);
+
+  // Director Loop
+  useEffect(() => {
+    if (!gameStarted || state.gameStatus !== 'playing') return;
+
+    const interval = setInterval(runDirector, 5000); // Check every 5s, but throttled inside
+    return () => clearInterval(interval);
+  }, [gameStarted, state.gameStatus, runDirector]);
+
 
   const handlePurchase = useCallback((item: StoreItem) => {
-    // Dispatch purchase action
     dispatch({
       type: 'PURCHASE_ITEM',
       item: {
@@ -260,30 +270,9 @@ export default function GamePage() {
         duration: item.duration
       }
     });
-    playSound('pickup'); // Cha-ching sound fallback
+    playSound('pickup');
   }, [dispatch, playSound]);
 
-  // Trigger story on significant events
-  useEffect(() => {
-    if (!gameStarted || state.gameStatus !== 'playing') return;
-
-    // Check for low health
-    if (state.player.health < 30 && state.player.health > 0) {
-      const lastLowHealthStory = state.storyLog.find(
-        e => e.text.includes('weak') || e.text.includes('fading')
-      );
-      if (!lastLowHealthStory || Date.now() - lastLowHealthStory.timestamp > 30000) {
-        generateStory('Player health is critically low');
-      }
-    }
-
-    // Check for all enemies defeated
-    if (state.enemies.length === 0 && state.currentQuests.find(q => q.id === 'defeat-enemies' && !q.completed)) {
-      generateStory('All enemies have been defeated');
-    }
-  }, [state.player.health, state.enemies.length, state.currentQuests, state.gameStatus, gameStarted, generateStory, state.storyLog]);
-
-  // Add a unique key to force remount of critical components on reset
   const [gameInstanceId, setGameInstanceId] = useState(0);
 
   const handleStart = useCallback(() => {
@@ -292,37 +281,30 @@ export default function GamePage() {
       finalName = 'Adventurer';
       setPlayerName('Adventurer');
     }
-
     initializeAudio();
     setGameStarted(true);
     startGame();
-    // Delay music start slightly to allow audio context to initialize
     setTimeout(() => startMusic(), 100);
-    generateStory(`Player ${finalName} enters the dungeon`);
-  }, [startGame, generateStory, initializeAudio, startMusic, playerName]);
+  }, [startGame, initializeAudio, startMusic, playerName]);
 
   const handleRestart = useCallback(() => {
     resetGame();
-    // Increment instance ID to force remount of components that might have stuck state (like DamageOverlay)
     setGameInstanceId(prev => prev + 1);
     setGameStarted(true);
     lastHealthRef.current = 100;
     lastEnemyCountRef.current = 0;
     startMusic();
-    generateStory(`${playerName || 'Adventurer'} enters the dungeon once more`);
-  }, [resetGame, generateStory, startMusic, playerName]);
+  }, [resetGame, startMusic]);
 
   // Story notification sound
   const handleStoryShown = useCallback(() => {
     playSound('storyNotification');
   }, [playSound]);
 
-  // Danger alert sound
   const handleDangerAlert = useCallback(() => {
     playSound('danger');
   }, [playSound]);
 
-  // Check if player can interact with nearby milestone
   const canInteract = state.milestones.some(m => {
     if (m.collected) return false;
     const dx = state.player.x - m.x;
@@ -332,17 +314,12 @@ export default function GamePage() {
 
   const canAttack = state.player.attackCooldown <= 0;
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopGame();
       stopMusic();
     };
   }, [stopGame, stopMusic]);
-
-
-
-
 
   if (!gameStarted) {
     return (
@@ -352,7 +329,6 @@ export default function GamePage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center max-w-md w-full"
         >
-          {/* Title */}
           <motion.h1
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
@@ -364,8 +340,7 @@ export default function GamePage() {
           </motion.h1>
 
           <p className="text-muted-foreground mb-8 leading-relaxed">
-            Explore the procedurally generated dungeon. Defeat enemies with your fireball.
-            Discover milestones. AI narrates your journey.
+            Procedural Roguelite with AI Director.
           </p>
 
           <div className="mb-6 space-y-4 bg-card/50 p-6 rounded-lg border border-border">
@@ -382,28 +357,8 @@ export default function GamePage() {
                 className="w-full px-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
               />
             </div>
-
-
           </div>
 
-          {/* Controls info */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-card border border-border rounded-lg mb-6 text-left overflow-hidden"
-              >
-                {/* ... controls content ... */}
-                <div className="p-4 text-sm text-muted-foreground">
-                  Controls are same as single player.
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Buttons */}
           <div className="flex flex-col gap-3">
             <Button
               size="lg"
@@ -413,39 +368,23 @@ export default function GamePage() {
               <Play className="w-5 h-5" />
               Start Game
             </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => setShowControls(!showControls)}
-              className="gap-2"
-            >
-              <Info className="w-4 h-4" />
-              {showControls ? 'Hide' : 'Show'} Controls
-            </Button>
           </div>
-
-          {/* Credits */}
-          <p className="text-xs text-muted-foreground mt-8">
-            Built with Next.js, Framer Motion, and AI SDK
-          </p>
         </motion.div>
       </div>
     );
   }
 
-  // Game context for Tambo
+  // Game context for Tambo Chat
   const tamboGameState = {
     health: state.player.health,
     maxHealth: state.player.maxHealth,
     level: state.level,
     score: state.score,
     enemiesNearby: state.enemies.filter(e => e.isAggro).length,
-    currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
     enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
+    currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
     playerName: playerName || 'Adventurer',
   };
-
-
 
   return (
     <TamboProviderWrapper
@@ -455,18 +394,29 @@ export default function GamePage() {
       onToggleMute={toggleMute}
     >
       <div className="fixed inset-0 overflow-hidden select-none">
-        {/* Animated Background */}
         <AnimatedBackdrop />
 
+        {/* Back Button - Outside Game Container */}
+        <div className="absolute top-6 left-6 z-50">
+          <Button
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-full bg-black/40 border-white/10 hover:bg-black/80 hover:border-white/50 text-white backdrop-blur-sm transition-all shadow-xl"
+            onClick={() => {
+              stopGame();
+              setGameStarted(false);
+            }}
+            title="Back to Menu"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </Button>
+        </div>
 
-
-        {/* Centered 4:3 Game Container */}
         <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
           <div
             className="relative w-full h-full max-w-[1200px] max-h-[900px] rounded-lg overflow-hidden shadow-2xl shadow-black/50"
             style={{ aspectRatio: '4/3' }}
           >
-            {/* CRT-style frame */}
             <div className="absolute inset-0 border-4 border-border/50 rounded-lg pointer-events-none z-30" />
             <div className="absolute inset-0 rounded-lg pointer-events-none z-30 bg-gradient-to-b from-foreground/5 to-transparent" style={{ height: '30%' }} />
 
@@ -474,7 +424,6 @@ export default function GamePage() {
               <GameRenderer state={state} />
             </div>
 
-            {/* HUD Overlays - now positioned within game container */}
             <HealthBar
               health={state.player.health}
               maxHealth={state.player.maxHealth}
@@ -495,7 +444,8 @@ export default function GamePage() {
               canInteract={canInteract}
             />
 
-            {/* Shop Button - Bottom Left */}
+
+
             <div className="absolute bottom-8 left-8 z-40">
               <Button
                 variant="secondary"
@@ -523,13 +473,20 @@ export default function GamePage() {
               onPurchase={handlePurchase}
             />
 
-            {/* Inline Story Popup */}
+            {/* Inline Story Popup - RESTORED FOR DIRECTOR LOGS */}
             <StoryPopup
               storyLog={state.storyLog}
               onStoryShown={handleStoryShown}
             />
 
-            {/* Notification Bar with sound controls */}
+            {/* AI Director Status Indicator */}
+            {directorActive && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/50 text-red-500 px-3 py-1 rounded-full text-xs font-mono border border-red-500/30 flex items-center gap-2">
+                <Zap className="w-3 h-3 animate-pulse" />
+                DIRECTOR ACTIVE
+              </div>
+            )}
+
             <NotificationBar
               gameState={state}
               isMuted={isMuted}
@@ -537,13 +494,7 @@ export default function GamePage() {
               onDangerAlert={handleDangerAlert}
             />
 
-            {/* Top Right Controls Container - Fixed below Minimap */}
-            {/* Minimap is fixed top-4 right-4. Height approx 100-150px. */}
-            {/* Positioning this at top-48 (12rem = 192px) should place it cleanly below. */}
             <div className="fixed top-48 right-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
-              {/* Pointer events allows clicking through empty space, children need auto */}
-
-              {/* Voice Control Panel */}
               <div className="pointer-events-auto">
                 <VoiceControl
                   onMove={handleVoiceMove}
@@ -551,6 +502,37 @@ export default function GamePage() {
                   onAttack={handleVoiceAttack}
                   onInteract={handleInteract}
                   onStop={handleVoiceStop}
+                  onComplexCommand={async (text) => {
+                    try {
+                      const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          message: text,
+                          gameContext: tamboGameState
+                        }),
+                      });
+
+                      if (response.ok) {
+                        const { reply, toolCalls } = await response.json();
+                        // If we have a reply, MAYBE show it via story log?
+                        if (reply) {
+                          addStoryEntry({ text: `Tambo: "${reply}"`, type: 'dialogue' });
+                        }
+
+                        if (toolCalls && Array.isArray(toolCalls)) {
+                          toolCalls.forEach((tc: any) => {
+                            if (tc.function) {
+                              const args = JSON.parse(tc.function.arguments);
+                              applyAIAction(tc.function.name, args);
+                            }
+                          });
+                        }
+                      }
+                    } catch (e) {
+                      console.error('Complex command failed', e);
+                    }
+                  }}
                   isGameActive={gameStarted && state.gameStatus === 'playing'}
                   isMuted={isMuted}
                   onToggleMute={toggleMute}
@@ -558,7 +540,6 @@ export default function GamePage() {
                 />
               </div>
 
-              {/* Tambo AI Chat Trigger - Styled like Voice Control */}
               <div className="pointer-events-auto">
                 {!showTamboChat && (
                   <motion.button
@@ -579,28 +560,15 @@ export default function GamePage() {
               </div>
             </div>
 
-
-            {/* Tambo AI Chat - Draggable Window */}
             <TamboGameChat
               isOpen={showTamboChat}
               onClose={() => setShowTamboChat(false)}
-              gameContext={{
-                health: state.player.health,
-                maxHealth: state.player.maxHealth,
-                level: state.level,
-                score: state.score,
-                enemiesNearby: state.enemies.filter(e => e.isAggro).length,
-                enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
-                currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
-                playerX: state.player.x,
-                playerY: state.player.y,
-              }}
+              gameContext={{ ...tamboGameState, playerX: state.player.x, playerY: state.player.y }}
               onGameAction={(action) => {
                 if (action === 'attack') handleAttack();
                 else if (action === 'interact') handleInteract();
               }}
               onCommand={(command) => {
-                // Reuse existing voice command handlers
                 switch (command.type) {
                   case 'move':
                     if (command.direction && ['up', 'down', 'left', 'right'].includes(command.direction)) {
@@ -626,7 +594,6 @@ export default function GamePage() {
               className="shadow-xl"
             />
 
-            {/* Damage screen effect - Key forces reset on new game */}
             <DamageOverlay
               key={`damage-overlay-${gameInstanceId}`}
               health={state.player.health}
@@ -634,7 +601,6 @@ export default function GamePage() {
               lastDamageTime={state.player.lastDamageTime}
             />
 
-            {/* Game Over / Victory Screen */}
             <GameOverScreen
               isGameOver={state.gameStatus === 'gameover'}
               isVictory={state.gameStatus === 'victory'}
@@ -643,7 +609,6 @@ export default function GamePage() {
               onRestart={handleRestart}
             />
 
-            {/* Mobile touch controls hint */}
             <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 md:hidden">
               <p className="text-[10px] text-muted-foreground/50 text-center">
                 Use WASD or arrows to move

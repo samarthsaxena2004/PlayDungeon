@@ -1,65 +1,11 @@
-import Groq from "groq-sdk";
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-async function generateWithGroq(systemPrompt: string, userPrompt: string, playerName: string) {
-  const chatCompletion = await groq.chat.completions.create({
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    model: "llama-3.3-70b-versatile",
-    temperature: 0.7,
-    max_tokens: 100,
-    top_p: 1,
-    stream: false,
-    stop: null,
-  });
-
-  return {
-    story: chatCompletion.choices[0]?.message?.content || "The dungeon shadows shift uneasily...",
-    source: "Groq"
-  };
-}
-
-// Tambo generation using raw fetch to avoid complex SDK Thread state
-async function generateWithTambo(systemPrompt: string, userPrompt: string) {
-  const apiKey = process.env.TAMBO_API_KEY || process.env.NEXT_PUBLIC_TAMBO_API_KEY;
-  if (!apiKey) throw new Error("Missing Tambo API Key");
-
-  // Attempting standard OpenAI-compatible endpoint on Tambo's base URL
-  const response = await fetch("https://api.tambo.co/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "tambo-story-v1", // This might need adjustment if specific models are required
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 100,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Tambo API Error: ${response.status} ${response.statusText} - ${errorText}`);
-  }
-
-  const data = await response.json();
-  return {
-    story: data.choices?.[0]?.message?.content || "The dungeon whispers...",
-    source: "Tambo"
-  };
-}
+import { TAMBO_TOOLS } from "@/lib/tambo-tools";
+import { generateWithTambo } from "@/lib/tambo-client";
+import { getPersonalitySystemPrompt, PlayerProfile } from "@/lib/personality";
 
 export async function POST(req: Request) {
-  const { context, health, recentEvents, level, playerName } = await req.json();
+  const { context, health, recentEvents, level, playerName, profile } = await req.json();
+
+  const personalityInstructions = profile ? getPersonalitySystemPrompt(profile as PlayerProfile) : "";
 
   const systemPrompt = `You are the Dungeon Master (DM) for a dark fantasy RPG called 'Deep Dungeon'. 
     The player${playerName ? ` named ${playerName}` : ' named Adventurer'} is exploring a procedurally generated dungeon.
@@ -74,6 +20,8 @@ export async function POST(req: Request) {
     
     Current Level: ${level || 1}
     Player Health: ${health}%
+    
+    ${personalityInstructions}
     `;
 
   const userPrompt = `
@@ -83,23 +31,39 @@ export async function POST(req: Request) {
     Narrate what happens next or describe the atmosphere.
     `;
 
-  try {
-    // Try Tambo first
+  const models = ["tambo-story-v1", "gpt-5.2"];
+  let lastError = null;
+
+  for (const model of models) {
     try {
-      console.log('[Story] Attempting generation with Tambo...');
-      const result = await generateWithTambo(systemPrompt, userPrompt);
-      return Response.json(result);
-    } catch (tamboError) {
-      console.warn('[Story] Tambo generation failed, falling back to Groq:', tamboError);
-      // Fallback to Groq
-      const result = await generateWithGroq(systemPrompt, userPrompt, playerName);
-      return Response.json(result);
+      console.log(`[Story] Attempting generation with ${model}...`);
+      const result = await generateWithTambo(
+        [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        {
+          model,
+          tools: TAMBO_TOOLS,
+          tool_choice: "auto",
+          max_tokens: 200,
+        }
+      );
+
+      return Response.json({
+        story: result.content || "The dungeon whispers...",
+        toolCalls: result.toolCalls,
+        source: model
+      });
+    } catch (error: any) {
+      console.error(`[Story] Generation failed with ${model}:`, error.message);
+      lastError = error;
+      // Continue to next model
     }
-  } catch (error: any) {
-    console.error('[Story] All generation failed:', error);
-    return Response.json(
-      { story: `The torch flickers... (Error: ${error.message || String(error)})`, source: "System" },
-      { status: 200 }
-    );
   }
+
+  return Response.json(
+    { story: `Tambo unavailable: ${lastError?.message || "Unknown error"}`, source: "System" },
+    { status: 503 }
+  );
 }

@@ -11,6 +11,7 @@ interface VoiceControlProps {
   onAttack: (count: number) => void;
   onInteract: () => void;
   onStop: () => void;
+  onComplexCommand?: (command: string) => void;
   isGameActive: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
@@ -23,6 +24,7 @@ const VOICE_HELP = [
   { command: 'Shoot/Attack [number]', example: '"Shoot 5 times" or "Fire"', desc: 'Fire fireballs' },
   { command: 'Interact/Use/Pick up', example: '"Interact" or "Pick up"', desc: 'Interact with objects' },
   { command: 'Stop/Halt', example: '"Stop" or "Wait"', desc: 'Stop current action' },
+  { command: 'Any other action', example: '"Bluff the guard"', desc: 'AI Action' },
 ];
 
 export function VoiceControl({
@@ -31,6 +33,7 @@ export function VoiceControl({
   onAttack,
   onInteract,
   onStop,
+  onComplexCommand,
   isGameActive,
   isMuted,
   onToggleMute,
@@ -156,8 +159,16 @@ export function VoiceControl({
         break;
 
       case 'unknown':
-        success = false;
-        actionText = `Unknown: "${command.raw}"`;
+        if (onComplexCommand && command.raw) {
+          success = true;
+          actionText = `Asking Tambo: "${command.raw}"`;
+          onComplexCommand(command.raw);
+          setCurrentAction('Consulting Tambo...');
+          actionTimeoutRef.current = setTimeout(() => setCurrentAction(null), 2000);
+        } else {
+          success = false;
+          actionText = `Unknown: "${command.raw}"`;
+        }
         break;
     }
 
