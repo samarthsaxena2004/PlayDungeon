@@ -14,6 +14,13 @@ export interface Entity extends Position {
   height: number;
 }
 
+export interface ActiveEffect {
+  type: 'speed' | 'damage' | 'shield';
+  duration: number; // ms remaining
+  value: number; // multiplier or amount
+  startTime: number;
+}
+
 export interface Player extends Entity {
   health: number;
   maxHealth: number;
@@ -22,6 +29,7 @@ export interface Player extends Entity {
   attackCooldown: number;
   speed: number;
   lastDamageTime: number;
+  activeEffects: ActiveEffect[];
 }
 
 export interface Enemy extends Entity {
@@ -74,6 +82,7 @@ export interface GameState {
   gameStatus: 'playing' | 'paused' | 'gameover' | 'victory';
   score: number;
   level: number;
+  coins: number;
 }
 
 export interface Quest {
@@ -114,4 +123,5 @@ export type GameAction =
   | { type: 'ADD_STORY'; entry: Omit<StoryEntry, 'id' | 'timestamp'> }
   | { type: 'COMPLETE_QUEST'; questId: string }
   | { type: 'RESET_GAME' }
-  | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] };
+  | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] }
+  | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } };

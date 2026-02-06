@@ -11,6 +11,8 @@ import { QuestPanel } from '@/games/dungeon/components/quest-panel';
 import { HealthBar } from '@/games/dungeon/components/health-bar';
 import { GameOverScreen } from '@/games/dungeon/components/game-over-screen';
 import { DamageOverlay } from '@/games/dungeon/components/damage-overlay';
+import { StoreModal, type StoreItem } from '@/games/dungeon/components/store-modal';
+import { useShopkeeper } from '@/games/dungeon/hooks/use-shopkeeper';
 import dynamic from 'next/dynamic';
 
 const TamboGameChat = dynamic(
@@ -23,9 +25,9 @@ import { StoryPopup } from '@/games/dungeon/components/story-popup';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Info, Keyboard, ArrowLeft } from 'lucide-react';
+import { Play, Info, Keyboard, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMultiplayer } from '@/lib/multiplayer';
+
 
 
 type KeyMap = {
@@ -47,7 +49,7 @@ const KEY_MAP: KeyMap = {
 
 export default function GamePage() {
   const { setActiveGame } = useGameStore();
-  const { state, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry } = useGameEngine();
+  const { state, dispatch, setControl, attack, interact, resetGame, startGame, stopGame, addStoryEntry } = useGameEngine();
   const {
     initializeAudio,
     playSound,
@@ -60,6 +62,7 @@ export default function GamePage() {
 
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [showShop, setShowShop] = useState(false);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const lastStoryTriggerRef = useRef<number>(0);
@@ -245,6 +248,20 @@ export default function GamePage() {
     }
   }, [state.storyLog, state.level, state.player.health, state.currentQuests, addStoryEntry, playerName]);
 
+  const handlePurchase = useCallback((item: StoreItem) => {
+    // Dispatch purchase action
+    dispatch({
+      type: 'PURCHASE_ITEM',
+      item: {
+        type: item.type,
+        cost: item.cost,
+        value: item.value,
+        duration: item.duration
+      }
+    });
+    playSound('pickup'); // Cha-ching sound fallback
+  }, [dispatch, playSound]);
+
   // Trigger story on significant events
   useEffect(() => {
     if (!gameStarted || state.gameStatus !== 'playing') return;
@@ -322,9 +339,9 @@ export default function GamePage() {
     };
   }, [stopGame, stopMusic]);
 
-  // Multiplayer Hook
-  const [roomId, setRoomId] = useState("dungeon-1");
-  const { messages: mpMessages, remotePlayers, broadcastAction } = useMultiplayer(roomId, playerName || "Adventurer");
+
+
+
 
   if (!gameStarted) {
     return (
@@ -365,37 +382,7 @@ export default function GamePage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="roomId" className="text-sm font-medium text-muted-foreground block text-left">
-                Room ID (Multiplayer)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="roomId"
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  className="flex-1 px-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground font-mono"
-                />
-                <Button variant="outline" size="icon" onClick={() => setRoomId(Math.random().toString(36).substring(7))}>
-                  🎲
-                </Button>
-              </div>
-            </div>
 
-            {/* Lobby Status */}
-            <div className="text-xs text-left p-2 bg-black/20 rounded font-mono h-20 overflow-y-auto">
-              <span className="text-muted-foreground block mb-1">Lobby Activity:</span>
-              {mpMessages.length === 0 ? (
-                <span className="text-muted-foreground/50 opacity-50">Waiting for connections...</span>
-              ) : (
-                mpMessages.map((m: { text: string }, i: number) => (
-                  <div key={i} className="text-green-400">
-                    {m.text}
-                  </div>
-                ))
-              )}
-            </div>
           </div>
 
           {/* Controls info */}
@@ -457,12 +444,7 @@ export default function GamePage() {
     playerName: playerName || 'Adventurer',
   };
 
-  // Broadcast movement
-  useEffect(() => {
-    if (gameStarted && state.gameStatus === 'playing') {
-      broadcastAction("move", { x: state.player.x, y: state.player.y });
-    }
-  }, [state.player.x, state.player.y, gameStarted, state.gameStatus, broadcastAction]);
+
 
   return (
     <TamboProviderWrapper
@@ -487,9 +469,8 @@ export default function GamePage() {
             <div className="absolute inset-0 border-4 border-border/50 rounded-lg pointer-events-none z-30" />
             <div className="absolute inset-0 rounded-lg pointer-events-none z-30 bg-gradient-to-b from-foreground/5 to-transparent" style={{ height: '30%' }} />
 
-            {/* Game Canvas */}
             <div className="absolute inset-0 bg-background">
-              <GameRenderer state={state} remotePlayers={remotePlayers} />
+              <GameRenderer state={state} />
             </div>
 
             {/* HUD Overlays - now positioned within game container */}
@@ -513,6 +494,34 @@ export default function GamePage() {
               canInteract={canInteract}
             />
 
+            {/* Shop Button - Bottom Left */}
+            <div className="absolute bottom-8 left-8 z-40">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="rounded-full px-6 py-6 border-2 border-yellow-500/50 shadow-lg bg-black/80 hover:bg-black/90 flex items-center gap-3 transition-transform hover:scale-105"
+                onClick={() => setShowShop(true)}
+              >
+                <div className="bg-yellow-500/20 p-2 rounded-full">
+                  <ShoppingBag className="text-yellow-400 w-5 h-5" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-bold text-yellow-500 uppercase tracking-wider">The Shop</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-mono font-bold text-white leading-none">{state.coins}</span>
+                    <span className="text-xs text-yellow-500/70">GP</span>
+                  </div>
+                </div>
+              </Button>
+            </div>
+
+            <StoreModal
+              isOpen={showShop}
+              onClose={() => setShowShop(false)}
+              coins={state.coins}
+              onPurchase={handlePurchase}
+            />
+
             {/* Inline Story Popup */}
             <StoryPopup
               storyLog={state.storyLog}
@@ -527,17 +536,50 @@ export default function GamePage() {
               onDangerAlert={handleDangerAlert}
             />
 
-            {/* Voice Control Panel */}
-            <VoiceControl
-              onMove={handleVoiceMove}
-              onTurn={handleVoiceTurn}
-              onAttack={handleVoiceAttack}
-              onInteract={handleInteract}
-              onStop={handleVoiceStop}
-              isGameActive={gameStarted && state.gameStatus === 'playing'}
-              isMuted={isMuted}
-              onToggleMute={toggleMute}
-            />
+            {/* Top Right Controls Container - Fixed below Minimap */}
+            {/* Minimap is fixed top-4 right-4. Height approx 100-150px. */}
+            {/* Positioning this at top-48 (12rem = 192px) should place it cleanly below. */}
+            <div className="fixed top-48 right-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
+              {/* Pointer events allows clicking through empty space, children need auto */}
+
+              {/* Voice Control Panel */}
+              <div className="pointer-events-auto">
+                <VoiceControl
+                  onMove={handleVoiceMove}
+                  onTurn={handleVoiceTurn}
+                  onAttack={handleVoiceAttack}
+                  onInteract={handleInteract}
+                  onStop={handleVoiceStop}
+                  isGameActive={gameStarted && state.gameStatus === 'playing'}
+                  isMuted={isMuted}
+                  onToggleMute={toggleMute}
+                  className="mb-2"
+                />
+              </div>
+
+              {/* Tambo AI Chat */}
+              <div className="pointer-events-auto relative">
+                <TamboGameChat
+                  gameContext={{
+                    health: state.player.health,
+                    maxHealth: state.player.maxHealth,
+                    level: state.level,
+                    score: state.score,
+                    enemiesNearby: state.enemies.filter(e => e.isAggro).length,
+                    enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
+                    currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
+                    playerX: state.player.x,
+                    playerY: state.player.y,
+                  }}
+                  onGameAction={(action) => {
+                    if (action === 'attack') handleAttack();
+                    else if (action === 'interact') handleInteract();
+                  }}
+                  docked={true} // Force relative positioning
+                  className="shadow-xl"
+                />
+              </div>
+            </div>
 
             {/* Damage screen effect - Key forces reset on new game */}
             <DamageOverlay
@@ -545,25 +587,6 @@ export default function GamePage() {
               health={state.player.health}
               maxHealth={state.player.maxHealth}
               lastDamageTime={state.player.lastDamageTime}
-            />
-
-            {/* Tambo AI Chat */}
-            <TamboGameChat
-              gameContext={{
-                health: state.player.health,
-                maxHealth: state.player.maxHealth,
-                level: state.level,
-                score: state.score,
-                enemiesNearby: state.enemies.filter(e => e.isAggro).length,
-                enemiesDefeated: state.currentQuests.find(q => q.id === 'defeat-enemies')?.progress || 0,
-                currentQuest: state.currentQuests.find(q => !q.completed)?.title || 'Explore',
-                playerX: state.player.x,
-                playerY: state.player.y,
-              }}
-              onGameAction={(action) => {
-                if (action === 'attack') handleAttack();
-                else if (action === 'interact') handleInteract();
-              }}
             />
 
             {/* Game Over / Victory Screen */}

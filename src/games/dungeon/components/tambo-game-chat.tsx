@@ -23,6 +23,8 @@ interface TamboGameChatProps {
     playerY: number;
   };
   onGameAction?: (action: string) => void;
+  docked?: boolean;
+  className?: string; // Additional custom classes
 }
 
 // Quick prompts for common questions
@@ -36,7 +38,7 @@ const QUICK_PROMPTS = [
 // Messages are now handled by Tambo SDK
 
 
-export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps) {
+export function TamboGameChat({ gameContext, onGameAction, docked = false, className = '' }: TamboGameChatProps) {
   // Tambo SDK hooks
   // Note: We're using the hook which provides streaming state. 
   // If the SDK version changes, ensure this destructuring matches.
@@ -103,6 +105,7 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
 
   // Dragging handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (docked) return; // Disable dragging when docked
     if ((e.target as HTMLElement).closest('.chat-header')) {
       setIsDragging(true);
       dragOffset.current = {
@@ -290,18 +293,18 @@ export function TamboGameChat({ gameContext, onGameAction }: TamboGameChatProps)
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       style={{
-        position: 'absolute',
-        left: position.x,
-        top: position.y,
+        position: docked ? 'relative' : 'absolute',
+        left: docked ? 'auto' : position.x,
+        top: docked ? 'auto' : position.y,
         width: isMinimized ? 280 : size.width,
         height: isMinimized ? 'auto' : size.height,
         zIndex: 50,
       }}
-      className="bg-card/95 backdrop-blur-md border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden"
+      className={`bg-card/95 backdrop-blur-md border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden ${className}`}
       onMouseDown={handleMouseDown}
     >
-      {/* Header - Draggable */}
-      <div className="chat-header flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border cursor-move select-none">
+      {/* Header - Draggable only if not docked */}
+      <div className={`chat-header flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border select-none ${docked ? '' : 'cursor-move'}`}>
         <div className="flex items-center gap-2">
           <GripVertical className="w-4 h-4 text-muted-foreground" />
           <Sparkles className="w-4 h-4 text-primary" />

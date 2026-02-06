@@ -34,7 +34,8 @@ export function VoiceControl({
   isGameActive,
   isMuted,
   onToggleMute,
-}: VoiceControlProps) {
+  className = "",
+}: VoiceControlProps & { className?: string }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showPanel, setShowPanel] = useState(true);
   const [commandHistory, setCommandHistory] = useState<{ text: string; success: boolean }[]>([]);
@@ -206,8 +207,8 @@ export function VoiceControl({
 
   return (
     <>
-      {/* Voice Control Panel - positioned bottom-left, above chat */}
-      <div className="absolute bottom-36 left-4 z-40">
+      {/* Voice Control Panel - Replaced absolute with className prop */}
+      <div className={className || "absolute bottom-36 left-4 z-40"}>
         {/* Collapsed toggle - compact button */}
         {!showPanel && (
           <motion.button
