@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTamboThread, useTamboVoice } from '@tambo-ai/react';
+import { parseVoiceCommand, type VoiceCommand } from '@/games/dungeon/hooks/use-voice-commands';
 
 interface TamboGameChatProps {
   gameContext: {
@@ -23,6 +24,7 @@ interface TamboGameChatProps {
     playerY: number;
   };
   onGameAction?: (action: string) => void;
+  onCommand?: (command: VoiceCommand) => void;
 
   isOpen: boolean;
   onClose: () => void;
@@ -40,7 +42,7 @@ const QUICK_PROMPTS = [
 // Messages are now handled by Tambo SDK
 
 
-export function TamboGameChat({ gameContext, onGameAction, isOpen, onClose, className = '' }: TamboGameChatProps) {
+export function TamboGameChat({ gameContext, onGameAction, onCommand, isOpen, onClose, className = '' }: TamboGameChatProps) {
   // Tambo SDK hooks
   // Note: We're using the hook which provides streaming state. 
   // If the SDK version changes, ensure this destructuring matches.
@@ -224,6 +226,20 @@ export function TamboGameChat({ gameContext, onGameAction, isOpen, onClose, clas
   // Send message via Tambo SDK
   const handleSend = async () => {
     if (!input.trim()) return;
+
+    // Try to parse as game command first
+    // This allows "move right" to work immediately without AI latency
+    if (onCommand) {
+      const command = parseVoiceCommand(input.trim());
+      if (command.type !== 'unknown') {
+        onCommand(command);
+        setInput('');
+        setShowQuickPrompts(false);
+        // We could also send a "shadow" message to Tambo context if needed, 
+        // but for now let's treat commands as direct actions.
+        return;
+      }
+    }
 
     try {
       setIsThinking(true); // Immediate feedback

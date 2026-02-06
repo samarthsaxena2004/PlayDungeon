@@ -599,6 +599,30 @@ export default function GamePage() {
                 if (action === 'attack') handleAttack();
                 else if (action === 'interact') handleInteract();
               }}
+              onCommand={(command) => {
+                // Reuse existing voice command handlers
+                switch (command.type) {
+                  case 'move':
+                    if (command.direction && ['up', 'down', 'left', 'right'].includes(command.direction)) {
+                      handleVoiceMove(command.direction as 'up' | 'down' | 'left' | 'right', command.count || 1);
+                    }
+                    break;
+                  case 'turn':
+                    if (command.direction && ['up', 'down', 'left', 'right'].includes(command.direction)) {
+                      handleVoiceTurn(command.direction as 'up' | 'down' | 'left' | 'right');
+                    }
+                    break;
+                  case 'attack':
+                    handleVoiceAttack(command.count || 1);
+                    break;
+                  case 'interact':
+                    handleInteract();
+                    break;
+                  case 'stop':
+                    handleVoiceStop();
+                    break;
+                }
+              }}
               className="shadow-xl"
             />
 
