@@ -23,6 +23,7 @@ import { AnimatedBackdrop } from '@/games/dungeon/components/animated-backdrop';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
 import { StoryPopup } from '@/games/dungeon/components/story-popup';
+import { PreGameScreen } from '@/games/dungeon/components/pre-game-screen';
 // import { NarrativeOverlay } from '@/games/dungeon/components/narrative-overlay'; // Reverted
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Info, ShoppingBag, MessageCircle, Sparkles, Zap, ArrowLeft } from 'lucide-react';
@@ -292,17 +293,17 @@ export default function GamePage() {
 
   const [gameInstanceId, setGameInstanceId] = useState(0);
 
-  const handleStart = useCallback(() => {
-    let finalName = playerName.trim();
+  const handleStart = useCallback((name: string) => {
+    let finalName = name.trim();
     if (!finalName) {
       finalName = 'Adventurer';
-      setPlayerName('Adventurer');
     }
+    setPlayerName(finalName);
     initializeAudio();
     setGameStarted(true);
     startGame();
     setTimeout(() => startMusic(), 100);
-  }, [startGame, initializeAudio, startMusic, playerName]);
+  }, [startGame, initializeAudio, startMusic]);
 
   const handleRestart = useCallback(() => {
     resetGame();
@@ -339,56 +340,7 @@ export default function GamePage() {
   }, [stopGame, stopMusic]);
 
   if (!gameStarted) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-md w-full"
-        >
-          <motion.h1
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-4xl md:text-5xl font-bold text-foreground mb-2 tracking-tight"
-          >
-            DEEP
-            <span className="text-primary"> DUNGEON</span>
-          </motion.h1>
-
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            Procedural Roguelite with AI Director.
-          </p>
-
-          <div className="mb-6 space-y-4 bg-card/50 p-6 rounded-lg border border-border">
-            <div className="space-y-2">
-              <label htmlFor="playerName" className="text-sm font-medium text-muted-foreground block text-left">
-                Hero Name
-              </label>
-              <input
-                id="playerName"
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Adventurer"
-                className="w-full px-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button
-              size="lg"
-              onClick={handleStart}
-              className="gap-2 w-full"
-            >
-              <Play className="w-5 h-5" />
-              Start Game
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <PreGameScreen onStart={handleStart} />;
   }
 
   // Game context for Tambo Chat
