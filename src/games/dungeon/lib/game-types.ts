@@ -90,6 +90,8 @@ export interface RoomModifiers {
   atmosphere: string; // e.g. "heavy_mist", "oppressive_heat"
 }
 
+import { DungeonTheme } from './director-config';
+
 export interface GameState {
   player: Player;
   enemies: Enemy[];
@@ -107,6 +109,8 @@ export interface GameState {
   aiState: AIState;        // New Persistent Memory
   roomModifiers: RoomModifiers; // New Legislative Rules
   directorTrigger: 'combat_start' | 'new_level' | 'low_health' | 'periodic' | null;
+  theme: DungeonTheme;
+  nextTheme: DungeonTheme | null;
 }
 
 export interface Quest {
@@ -159,4 +163,5 @@ export type GameAction =
   | { type: 'SET_GAME_STATUS'; status: GameState['gameStatus'] }
   | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } }
   | { type: 'APPLY_AI_ACTION'; tool: string; args: any }
-  | { type: 'CLEAR_DIRECTOR_TRIGGER' };
+  | { type: 'CLEAR_DIRECTOR_TRIGGER' }
+  | { type: 'SET_NEXT_THEME'; theme: DungeonTheme };

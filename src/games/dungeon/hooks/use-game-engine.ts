@@ -5,6 +5,8 @@ import type { GameState, GameAction, Player, Fireball, Enemy, Controls, AIAction
 import { generateDungeonMap, isWalkable } from '@/games/dungeon/lib/map-generator';
 import { INITIAL_PROFILE, updateProfile } from '@/lib/personality';
 
+import { DEFAULT_THEME, DungeonTheme } from '@/games/dungeon/lib/director-config';
+
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 30;
 const TILE_SIZE = 32;
@@ -19,12 +21,13 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function createInitialState(level: number = 1, initialGold: number = 0): GameState {
+function createInitialState(level: number = 1, initialGold: number = 0, theme: DungeonTheme = DEFAULT_THEME): GameState {
   const { map, spawnPoint, enemies, milestones } = generateDungeonMap(
     MAP_WIDTH,
     MAP_HEIGHT,
     TILE_SIZE,
-    level
+    level,
+    theme
   );
 
   const player: Player = {
@@ -53,7 +56,7 @@ function createInitialState(level: number = 1, initialGold: number = 0): GameSta
     storyLog: [
       {
         id: generateId(),
-        text: `Level ${level}: The Director watches...`,
+        text: `Level ${level}: The Director watches... (${theme.name})`,
         timestamp: Date.now(),
         type: 'narration',
       }
@@ -102,7 +105,9 @@ function createInitialState(level: number = 1, initialGold: number = 0): GameSta
       gravity: 1.0,
       atmosphere: 'clear'
     },
-    directorTrigger: null
+    directorTrigger: null,
+    theme,
+    nextTheme: null,
   };
 }
 
@@ -456,8 +461,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       if (shouldAdvanceLevel) {
-        // Generate new level
-        const newState = createInitialState(newLevel, state.coins); // Pass accumulated coins to next level
+        // Generate new level with AI THEME
+        const nextTheme = state.nextTheme || DEFAULT_THEME;
+        const newState = createInitialState(newLevel, state.coins, nextTheme);
         return {
           ...newState,
           score: state.score + 1000,
@@ -481,7 +487,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ...action.entry,
             id: generateId(),
             timestamp: Date.now(),
-          },
+            type: 'danger' as const // Use 'danger' style for Director updates
+          }
         ].slice(-50),
       };
     }
@@ -624,6 +631,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           logText = `New Quest: ${title}`;
           break;
         }
+
+        case 'set_theme': {
+          const { themeName, visualStyle, corridorWidth, enemyDensity } = args;
+          const newTheme: DungeonTheme = {
+            name: themeName || 'Unknown Depths',
+            description: 'The Director has altered reality.',
+            corridorWidth: corridorWidth || 2,
+            roomSizeBias: 'standard',
+            enemyDensity: enemyDensity || 1.0,
+            specialFeature: 'none',
+            visualStyle: visualStyle || 'stone'
+          };
+          newState.nextTheme = newTheme;
+          logText = `Director: The path ahead shifts to ${themeName}...`;
+          break;
+        }
       }
 
       if (logText) {
@@ -645,6 +668,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         directorTrigger: null
+      };
+    }
+
+    case 'SET_NEXT_THEME': {
+      return {
+        ...state,
+        nextTheme: action.theme
       };
     }
 

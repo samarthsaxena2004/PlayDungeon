@@ -23,6 +23,7 @@ import { AnimatedBackdrop } from '@/games/dungeon/components/animated-backdrop';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
 import { VoiceControl } from '@/games/dungeon/components/voice-control';
 import { StoryPopup } from '@/games/dungeon/components/story-popup';
+// import { NarrativeOverlay } from '@/games/dungeon/components/narrative-overlay'; // Reverted
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Info, ShoppingBag, MessageCircle, Sparkles, Zap, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -266,9 +267,14 @@ export default function GamePage() {
   useEffect(() => {
     if (!gameStarted || state.gameStatus !== 'playing') return;
 
+    // Trigger immediate analysis on start
+    if (state.level === 1 && state.storyLog.length === 1) {
+      runDirector('game_start');
+    }
+
     const interval = setInterval(runDirector, 5000); // Check every 5s, but throttled inside
     return () => clearInterval(interval);
-  }, [gameStarted, state.gameStatus, runDirector]);
+  }, [gameStarted, state.gameStatus, runDirector, state.level, state.storyLog.length]);
 
 
   const handlePurchase = useCallback((item: StoreItem) => {
@@ -484,7 +490,7 @@ export default function GamePage() {
               onPurchase={handlePurchase}
             />
 
-            {/* Inline Story Popup - RESTORED FOR DIRECTOR LOGS */}
+            {/* Inline Story Popup - RESTORED */}
             <StoryPopup
               storyLog={state.storyLog}
               onStoryShown={handleStoryShown}

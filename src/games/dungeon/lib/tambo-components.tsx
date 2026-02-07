@@ -5,7 +5,7 @@ import React from "react"
 import { z } from 'zod';
 import type { TamboComponent } from '@tambo-ai/react';
 import { motion } from 'framer-motion';
-import { Heart, Sword, Shield, Map, Target, Flame, Footprints, Sparkles, AlertTriangle, Trophy, Skull, User } from 'lucide-react';
+import { Heart, Sword, Shield, Map, Target, Flame, Footprints, Sparkles, AlertTriangle, Trophy, Skull, User, ArrowLeft } from 'lucide-react';
 
 // ============================================
 // 1. PLAYER STATS CARD - Shows current player status
@@ -23,7 +23,7 @@ type PlayerStatsProps = z.infer<typeof PlayerStatsPropsSchema>;
 function PlayerStatsCard({ health, maxHealth, level, score, enemiesDefeated }: PlayerStatsProps) {
   const healthPercent = (health / maxHealth) * 100;
   const healthColor = healthPercent > 60 ? 'bg-green-500' : healthPercent > 30 ? 'bg-yellow-500' : 'bg-red-500';
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -34,7 +34,7 @@ function PlayerStatsCard({ health, maxHealth, level, score, enemiesDefeated }: P
         <User className="w-5 h-5 text-primary" />
         Player Status
       </div>
-      
+
       {/* Health Bar */}
       <div className="space-y-1">
         <div className="flex justify-between text-sm">
@@ -51,7 +51,7 @@ function PlayerStatsCard({ health, maxHealth, level, score, enemiesDefeated }: P
           />
         </div>
       </div>
-      
+
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="bg-muted/50 rounded p-2">
@@ -90,14 +90,14 @@ function EnemyInfoCard({ enemyType, count, isAggressive, tip }: EnemyInfoProps) 
     ghost: '👻',
     boss: '👹',
   };
-  
+
   const enemyColors: Record<string, string> = {
     slime: 'border-green-500/50 bg-green-500/10',
     skeleton: 'border-gray-400/50 bg-gray-400/10',
     ghost: 'border-blue-400/50 bg-blue-400/10',
     boss: 'border-red-500/50 bg-red-500/10',
   };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -115,12 +115,12 @@ function EnemyInfoCard({ enemyType, count, isAggressive, tip }: EnemyInfoProps) 
           </span>
         )}
       </div>
-      
+
       <div className="text-sm text-muted-foreground mb-2">
         <Target className="w-4 h-4 inline mr-1" />
         {count} nearby
       </div>
-      
+
       <div className="text-xs bg-background/50 rounded p-2 border border-border">
         <Sparkles className="w-3 h-3 inline mr-1 text-primary" />
         <span className="text-foreground">{tip}</span>
@@ -148,7 +148,7 @@ function StrategyAdviceCard({ situation, recommendation, priority, action }: Str
     high: 'border-yellow-500/50 bg-yellow-500/10',
     critical: 'border-red-500/50 bg-red-500/10 animate-pulse',
   };
-  
+
   const actionIcons: Record<string, React.ReactNode> = {
     attack: <Flame className="w-5 h-5 text-destructive" />,
     dodge: <Footprints className="w-5 h-5 text-blue-400" />,
@@ -156,7 +156,7 @@ function StrategyAdviceCard({ situation, recommendation, priority, action }: Str
     heal: <Heart className="w-5 h-5 text-red-400" />,
     retreat: <Shield className="w-5 h-5 text-yellow-400" />,
   };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -196,7 +196,7 @@ type QuestProgressProps = z.infer<typeof QuestProgressPropsSchema>;
 
 function QuestProgressCard({ questName, description, progress, target, isComplete }: QuestProgressProps) {
   const progressPercent = Math.min((progress / target) * 100, 100);
-  
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -213,9 +213,9 @@ function QuestProgressCard({ questName, description, progress, target, isComplet
           {questName}
         </span>
       </div>
-      
+
       <p className="text-sm text-muted-foreground mb-3">{description}</p>
-      
+
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span>Progress</span>
@@ -248,9 +248,9 @@ function ControlsHelpCard({ focusControl }: ControlsHelpProps) {
     { name: 'attack', keys: ['SPACE'], description: 'Shoot fireball', icon: <Flame className="w-4 h-4" /> },
     { name: 'interact', keys: ['E'], description: 'Interact with objects', icon: <Sparkles className="w-4 h-4" /> },
   ];
-  
+
   const filtered = focusControl === 'all' ? controls : controls.filter(c => c.name === focusControl);
-  
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -261,7 +261,7 @@ function ControlsHelpCard({ focusControl }: ControlsHelpProps) {
         <Sword className="w-5 h-5 text-primary" />
         Controls Guide
       </div>
-      
+
       <div className="space-y-3">
         {filtered.map((control) => (
           <div key={control.name} className="flex items-center justify-between">
@@ -303,9 +303,9 @@ function GameActionCard({ actionType, description, targetInfo, onExecute }: Game
     move: { icon: <Footprints className="w-6 h-6" />, color: 'bg-primary hover:bg-primary/80 text-primary-foreground' },
     pause: { icon: <Shield className="w-6 h-6" />, color: 'bg-muted hover:bg-muted/80 text-foreground' },
   };
-  
+
   const style = actionStyles[actionType];
-  
+
   return (
     <motion.button
       initial={{ opacity: 0, scale: 0.9 }}
@@ -346,14 +346,14 @@ function DangerAlertCard({ alertType, message, urgency }: DangerAlertProps) {
     danger: 'border-orange-500 bg-orange-500/10 text-orange-500',
     critical: 'border-red-500 bg-red-500/10 text-red-500 animate-pulse',
   };
-  
+
   const alertIcons: Record<string, React.ReactNode> = {
     lowHealth: <Heart className="w-5 h-5" />,
     enemyNear: <Skull className="w-5 h-5" />,
     bossSpawned: <AlertTriangle className="w-5 h-5" />,
     trapped: <Shield className="w-5 h-5" />,
   };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}

@@ -1,6 +1,7 @@
 import type { GameMap, Tile, Enemy, Milestone, Position } from './game-types';
+import { DungeonTheme, DEFAULT_THEME } from './director-config';
 
-function createTile(x: number, y: number, type: Tile['type']): Tile {
+function createTile(x: number, y: number, type: Tile['type'], style: string = 'stone'): Tile {
   return {
     x,
     y,
@@ -18,7 +19,8 @@ export function generateDungeonMap(
   width: number,
   height: number,
   tileSize: number,
-  level: number
+  level: number,
+  theme: DungeonTheme = DEFAULT_THEME
 ): { map: GameMap; spawnPoint: Position; enemies: Enemy[]; milestones: Milestone[] } {
   const tiles: Tile[][] = [];
 
@@ -26,17 +28,28 @@ export function generateDungeonMap(
   for (let y = 0; y < height; y++) {
     tiles[y] = [];
     for (let x = 0; x < width; x++) {
-      tiles[y][x] = createTile(x, y, 'wall');
+      tiles[y][x] = createTile(x, y, 'wall', theme.visualStyle);
     }
   }
 
-  // Generate rooms
+  // Generate rooms based on Theme Size Bias
   const rooms: { x: number; y: number; w: number; h: number }[] = [];
   const numRooms = 6 + Math.floor(Math.min(level, 10) * 0.5);
 
+  let minRoomSize = 5;
+  let maxRoomExtra = 6;
+
+  if (theme.roomSizeBias === 'small') {
+    minRoomSize = 3;
+    maxRoomExtra = 4;
+  } else if (theme.roomSizeBias === 'large') {
+    minRoomSize = 7;
+    maxRoomExtra = 8;
+  }
+
   for (let i = 0; i < numRooms; i++) {
-    const roomWidth = 5 + Math.floor(Math.random() * 6);
-    const roomHeight = 5 + Math.floor(Math.random() * 6);
+    const roomWidth = minRoomSize + Math.floor(Math.random() * maxRoomExtra);
+    const roomHeight = minRoomSize + Math.floor(Math.random() * maxRoomExtra);
     const roomX = 2 + Math.floor(Math.random() * (width - roomWidth - 4));
     const roomY = 2 + Math.floor(Math.random() * (height - roomHeight - 4));
 
@@ -61,14 +74,16 @@ export function generateDungeonMap(
       for (let y = roomY; y < roomY + roomHeight; y++) {
         for (let x = roomX; x < roomX + roomWidth; x++) {
           if (y >= 0 && y < height && x >= 0 && x < width) {
-            tiles[y][x] = createTile(x, y, 'floor');
+            tiles[y][x] = createTile(x, y, 'floor', theme.visualStyle);
           }
         }
       }
     }
   }
 
-  // Connect rooms with corridors
+  // Connect rooms with corridors based on Theme Corridor Width
+  const corridorWidth = theme.corridorWidth;
+
   for (let i = 1; i < rooms.length; i++) {
     const prevRoom = rooms[i - 1];
     const currentRoom = rooms[i];
@@ -82,37 +97,36 @@ export function generateDungeonMap(
     if (Math.random() > 0.5) {
       // Horizontal then vertical
       for (let x = Math.min(prevCenterX, currCenterX); x <= Math.max(prevCenterX, currCenterX); x++) {
-        if (prevCenterY >= 0 && prevCenterY < height && x >= 0 && x < width) {
-          tiles[prevCenterY][x] = createTile(x, prevCenterY, 'floor');
-          // Make corridor 2 tiles wide
-          if (prevCenterY + 1 < height) {
-            tiles[prevCenterY + 1][x] = createTile(x, prevCenterY + 1, 'floor');
+        for (let w = 0; w < corridorWidth; w++) {
+          const cy = prevCenterY + w;
+          if (cy >= 0 && cy < height && x >= 0 && x < width) {
+            tiles[cy][x] = createTile(x, cy, 'floor', theme.visualStyle);
           }
         }
       }
       for (let y = Math.min(prevCenterY, currCenterY); y <= Math.max(prevCenterY, currCenterY); y++) {
-        if (y >= 0 && y < height && currCenterX >= 0 && currCenterX < width) {
-          tiles[y][currCenterX] = createTile(currCenterX, y, 'floor');
-          if (currCenterX + 1 < width) {
-            tiles[y][currCenterX + 1] = createTile(currCenterX + 1, y, 'floor');
+        for (let w = 0; w < corridorWidth; w++) {
+          const cx = currCenterX + w;
+          if (y >= 0 && y < height && cx >= 0 && cx < width) {
+            tiles[y][cx] = createTile(cx, y, 'floor', theme.visualStyle);
           }
         }
       }
     } else {
       // Vertical then horizontal
       for (let y = Math.min(prevCenterY, currCenterY); y <= Math.max(prevCenterY, currCenterY); y++) {
-        if (y >= 0 && y < height && prevCenterX >= 0 && prevCenterX < width) {
-          tiles[y][prevCenterX] = createTile(prevCenterX, y, 'floor');
-          if (prevCenterX + 1 < width) {
-            tiles[y][prevCenterX + 1] = createTile(prevCenterX + 1, y, 'floor');
+        for (let w = 0; w < corridorWidth; w++) {
+          const cx = prevCenterX + w;
+          if (y >= 0 && y < height && cx >= 0 && cx < width) {
+            tiles[y][cx] = createTile(cx, y, 'floor', theme.visualStyle);
           }
         }
       }
       for (let x = Math.min(prevCenterX, currCenterX); x <= Math.max(prevCenterX, currCenterX); x++) {
-        if (currCenterY >= 0 && currCenterY < height && x >= 0 && x < width) {
-          tiles[currCenterY][x] = createTile(x, currCenterY, 'floor');
-          if (currCenterY + 1 < height) {
-            tiles[currCenterY + 1][x] = createTile(x, currCenterY + 1, 'floor');
+        for (let w = 0; w < corridorWidth; w++) {
+          const cy = currCenterY + w;
+          if (cy >= 0 && cy < height && x >= 0 && x < width) {
+            tiles[cy][x] = createTile(x, cy, 'floor', theme.visualStyle);
           }
         }
       }
@@ -126,7 +140,8 @@ export function generateDungeonMap(
   tiles[Math.floor(spawnY / tileSize)][Math.floor(spawnX / tileSize)] = createTile(
     Math.floor(spawnX / tileSize),
     Math.floor(spawnY / tileSize),
-    'spawn'
+    'spawn',
+    theme.visualStyle
   );
 
   // Generate enemies in rooms (not the first room)
@@ -138,13 +153,13 @@ export function generateDungeonMap(
   if (level >= 2) availableTypes.push('skeleton');
   if (level >= 4) availableTypes.push('ghost');
 
-  // Calculate total number of enemies for the level
-  // Level 1: 1 enemy
-  // Level 2: 2-3 enemies
-  // Level 3: 3-5 enemies
+  // Calculate total number of enemies for the level with THEME DENSITY
   const baseEnemyCount = Math.floor(1 + (level - 1) * 1.5);
   const maxEnemyCount = Math.floor(1 + (level - 1) * 2);
   let totalEnemiesToSpawn = level === 1 ? 1 : Math.floor(baseEnemyCount + Math.random() * (maxEnemyCount - baseEnemyCount + 1));
+
+  // Apply AI Theme Density
+  totalEnemiesToSpawn = Math.max(1, Math.floor(totalEnemiesToSpawn * theme.enemyDensity));
 
   // Distribute enemies among rooms (skipping spawn room)
   const spawnableRooms = rooms.slice(1); // Exclude first room

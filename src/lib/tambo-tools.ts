@@ -185,6 +185,34 @@ export const TAMBO_TOOLS = [
                 required: ["title", "description", "target_count", "reward_gold"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "set_theme",
+            description: "Set the visual and structural theme for the NEXT level.",
+            parameters: {
+                type: "object",
+                properties: {
+                    themeName: { type: "string", description: "Name of the theme (e.g. 'The Void', 'Spider Nest')" },
+                    visualStyle: {
+                        type: "string",
+                        enum: ["stone", "moss", "dark", "rich"],
+                        description: "Visual texture style"
+                    },
+                    corridorWidth: {
+                        type: "number",
+                        enum: [1, 2, 3],
+                        description: "1=claustrophobic, 2=standard, 3=grand"
+                    },
+                    enemyDensity: {
+                        type: "number",
+                        description: "Multiplier 0.5 to 2.0"
+                    }
+                },
+                required: ["themeName", "visualStyle"]
+            }
+        }
     }
 ];
 

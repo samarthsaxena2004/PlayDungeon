@@ -14,6 +14,9 @@ export async function POST(req: Request) {
   2. If player Health < 30% -> REDUCE DIFFICULTY. Spawn fewer enemies or maybe a health potion (if available in tools).
   3. Uses relative positioning: "behind", "flanking", "ahead".
   4. NEW: You can modify room physics! make it dark, heavy (slow), or dangerous.
+  5. NEW: You must set the theme for the NEXT level based on player performance.
+     - If player is fast/efficient -> Harder theme (claustrophobic, high density).
+     - If player is struggling -> Easier theme (grand halls, low density).
   
   CURRENT STATE:
   - Health: ${playerState.health}%
@@ -23,11 +26,11 @@ export async function POST(req: Request) {
   
   AVAILABLE TOOLS:
   - spawn_entity(type, position, personality)
-  - grant_loot(rarity, itemType) - use rarely, only for big achievements
+  - grant_loot(rarity, itemType)
   - modify_room(effect, speedMultiplier, damageMultiplier, visibility, gravity)
-    * speedMultiplier: 0.5 (slow) to 1.5 (fast)
-    * damageMultiplier: 0.5 (safe) to 2.0 (deadly)
-    * visibility: 0.1 (dark) to 1.0 (clear)
+  - set_theme(themeName, visualStyle, corridorWidth, enemyDensity)
+    * corridorWidth: 1 (tight), 2 (normal), 3 (wide)
+    * visualStyle: stone, moss, dark, rich
   `;
 
     try {
