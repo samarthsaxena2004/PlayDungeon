@@ -108,6 +108,7 @@ function createInitialState(level: number = 1, initialGold: number = 0, theme: D
     directorTrigger: null,
     theme,
     nextTheme: null,
+    visualEffects: [],
   };
 }
 
@@ -160,6 +161,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let combatStarted = false;
       const validEnemies: Enemy[] = [];
       const validFireballs: Fireball[] = [];
+
+      // Update Visual Effects
+      const activeVisualEffects = state.visualEffects.filter(eff => currentTime - eff.startTime < eff.duration);
 
       // Process Fireballs first (Movement & Expiry)
       // (Filtered in-place logic to avoid map+filter overhead)
@@ -324,6 +328,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         coins: newCoins,
         profile: state.profile,
         directorTrigger: combatStarted && !state.directorTrigger ? 'combat_start' : state.directorTrigger,
+        visualEffects: activeVisualEffects,
       };
     }
 
@@ -564,6 +569,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
           newState.enemies = [...newState.enemies, newEnemy];
           logText = `Director: Spawning ${type} nearby!`;
+
+          // Add spawn rift effect
+          newState.visualEffects = [...newState.visualEffects, {
+            id: generateId(),
+            x: spawnX,
+            y: spawnY,
+            type: 'spawn_rift',
+            duration: 1500,
+            startTime: Date.now(),
+            scale: 1
+          }];
           break;
         }
 
@@ -588,6 +604,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           };
 
           logText = `Director: Room atmosphere shifts... ${effect || 'Physics changed'}`;
+
+          // Visual feedback for room change
+          newState.visualEffects = [...newState.visualEffects, {
+            id: generateId(),
+            x: state.player.x,
+            y: state.player.y,
+            type: 'curse_aura',
+            duration: 2000,
+            startTime: Date.now(),
+            scale: 100 // Global effect
+          }];
           break;
         }
 
@@ -675,6 +702,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         nextTheme: action.theme
+      };
+    }
+
+    case 'ADD_VISUAL_EFFECT': {
+      const { effect } = action;
+      return {
+        ...state,
+        visualEffects: [...state.visualEffects, { ...effect, startTime: Date.now() }]
       };
     }
 

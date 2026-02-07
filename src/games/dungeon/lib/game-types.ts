@@ -111,6 +111,15 @@ export interface GameState {
   directorTrigger: 'combat_start' | 'new_level' | 'low_health' | 'periodic' | null;
   theme: DungeonTheme;
   nextTheme: DungeonTheme | null;
+  visualEffects: VisualEffect[]; // New Visual Feedback
+}
+
+export interface VisualEffect extends Position {
+  id: string;
+  type: 'spawn_rift' | 'explosion' | 'heal_sparkle' | 'curse_aura';
+  duration: number;
+  startTime: number;
+  scale: number;
 }
 
 export interface Quest {
@@ -164,4 +173,5 @@ export type GameAction =
   | { type: 'PURCHASE_ITEM'; item: { type: 'speed' | 'damage' | 'heal'; cost: number; value: number; duration?: number } }
   | { type: 'APPLY_AI_ACTION'; tool: string; args: any }
   | { type: 'CLEAR_DIRECTOR_TRIGGER' }
+  | { type: 'ADD_VISUAL_EFFECT'; effect: Omit<VisualEffect, 'startTime'> }
   | { type: 'SET_NEXT_THEME'; theme: DungeonTheme };

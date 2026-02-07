@@ -410,7 +410,7 @@ export default function GamePage() {
       onInteract={handleInteract}
       onToggleMute={toggleMute}
     >
-      <div className="fixed inset-0 overflow-hidden select-none">
+      <div className="absolute inset-0 overflow-hidden select-none">
         <AnimatedBackdrop />
 
         {/* Back Button - Outside Game Container */}

@@ -56,7 +56,7 @@ function GameRendererComponent({ state }: GameRendererProps) {
     ctx.fillStyle = COLORS.pit;
     ctx.fillRect(0, 0, rect.width, rect.height);
 
-    const { map, player, enemies, fireballs, milestones, camera } = state;
+    const { map, player, enemies, fireballs, milestones, camera, visualEffects } = state;
     const { tileSize, tiles } = map;
 
     // Calculate visible area
@@ -419,6 +419,56 @@ function GameRendererComponent({ state }: GameRendererProps) {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, rect.width, rect.height);
 
+    // Draw Visual Effects (Rifts, Explosions, etc.)
+    if (visualEffects) {
+      for (const effect of visualEffects) {
+        const screenX = effect.x - camera.x;
+        const screenY = effect.y - camera.y;
+        const timeAlive = Date.now() - effect.startTime;
+        const progress = timeAlive / effect.duration; // 0 to 1
+
+        if (progress > 1) continue;
+
+        if (effect.type === 'spawn_rift') {
+          // Spawning portal animation
+          ctx.save();
+          ctx.translate(screenX + tileSize / 2, screenY + tileSize / 2);
+          ctx.rotate(timeAlive * 0.005);
+          ctx.scale(progress * 2, progress * 2);
+
+          const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+          gradient.addColorStop(0, '#a855f7'); // Purple center
+          gradient.addColorStop(0.5, 'transparent');
+          gradient.addColorStop(1, '#a855f7');
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(0, 0, 40 * (1 - progress), 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-10, 0); ctx.lineTo(10, 0);
+          ctx.moveTo(0, -10); ctx.lineTo(0, 10);
+          ctx.stroke();
+
+          ctx.restore();
+        } else if (effect.type === 'curse_aura') {
+          // Room modification feedback (Global Tint)
+          ctx.fillStyle = `rgba(100, 0, 20, ${0.2 * (1 - progress)})`;
+          ctx.fillRect(0, 0, rect.width, rect.height);
+
+          ctx.save();
+          ctx.font = 'bold 24px monospace';
+          ctx.fillStyle = `rgba(255, 50, 50, ${1 - progress})`;
+          ctx.textAlign = "center";
+          ctx.fillText("⚠️ ATMOSPHERE COMPROMISED", rect.width / 2, rect.height / 4);
+          ctx.restore();
+        }
+      }
+    }
+
   }, [state]);
 
   return (
@@ -440,6 +490,7 @@ export const GameRenderer = memo(GameRendererComponent, (prev: GameRendererProps
   // (Deep check is too expensive, length check + reference is a good heuristic for this game)
   if (prev.state.enemies !== next.state.enemies) return false;
   if (prev.state.fireballs !== next.state.fireballs) return false;
+  if (prev.state.visualEffects !== next.state.visualEffects) return false;
   if (prev.state.map !== next.state.map) return false;
 
   return true;
