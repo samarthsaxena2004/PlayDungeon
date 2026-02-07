@@ -11,13 +11,19 @@ import { QuestPanel } from '@/games/dungeon/components/quest-panel';
 import { HealthBar } from '@/games/dungeon/components/health-bar';
 import { GameOverScreen } from '@/games/dungeon/components/game-over-screen';
 import { DamageOverlay } from '@/games/dungeon/components/damage-overlay';
-import { StoreModal, type StoreItem } from '@/games/dungeon/components/store-modal';
 import dynamic from 'next/dynamic';
 
 const TamboGameChat = dynamic(
   () => import('@/games/dungeon/components/tambo-game-chat').then((mod) => mod.TamboGameChat),
   { ssr: false }
 );
+
+const StoreModal = dynamic(
+  () => import('@/games/dungeon/components/store-modal').then((mod) => mod.StoreModal),
+  { ssr: false }
+);
+
+import { type StoreItem } from '@/games/dungeon/components/store-modal';
 import { TamboProviderWrapper } from '@/games/dungeon/components/tambo-provider-wrapper';
 import { AnimatedBackdrop } from '@/games/dungeon/components/animated-backdrop';
 import { NotificationBar } from '@/games/dungeon/components/notification-bar';
@@ -71,6 +77,7 @@ export default function GamePage() {
   const [showShop, setShowShop] = useState(false);
   const [showTamboChat, setShowTamboChat] = useState(false);
   const [directorActive, setDirectorActive] = useState(false);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const lastDirectorTimeRef = useRef<number>(0);
   const lastHealthRef = useRef(100);
@@ -371,14 +378,54 @@ export default function GamePage() {
             variant="outline"
             size="icon"
             className="w-12 h-12 rounded-full bg-black/40 border-white/10 hover:bg-black/80 hover:border-white/50 text-white backdrop-blur-sm transition-all shadow-xl"
-            onClick={() => {
-              stopGame();
-              setGameStarted(false);
-            }}
+            onClick={() => setShowExitConfirmation(true)}
             title="Back to Menu"
           >
             <ArrowLeft className="w-6 h-6" />
           </Button>
+
+          <AnimatePresence>
+            {showExitConfirmation && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 20 }}
+                  className="bg-[#1a1a1a] border border-white/10 p-6 rounded-lg max-w-sm w-full shadow-2xl space-y-4"
+                >
+                  <h3 className="text-xl font-bold text-white font-pixel">Leaving Dungeon?</h3>
+                  <p className="text-gray-400 text-sm">
+                    Your current run progress will be lost. Are you sure you want to retreat?
+                  </p>
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/5"
+                      onClick={() => setShowExitConfirmation(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1 bg-red-900/50 hover:bg-red-800 border border-red-500/30 text-red-200"
+                      onClick={() => {
+                        setShowExitConfirmation(false);
+                        stopGame();
+                        setGameStarted(false);
+                      }}
+                    >
+                      Retreat
+                    </Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">

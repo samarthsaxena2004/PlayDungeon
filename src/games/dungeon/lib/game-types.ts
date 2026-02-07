@@ -112,6 +112,13 @@ export interface GameState {
   theme: DungeonTheme;
   nextTheme: DungeonTheme | null;
   visualEffects: VisualEffect[]; // New Visual Feedback
+  runStats: RunStats;
+}
+
+export interface RunStats {
+  enemiesDefeated: number;
+  damageTaken: number;
+  coinsEarned: number;
 }
 
 export interface VisualEffect extends Position {

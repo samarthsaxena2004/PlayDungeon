@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Sparkles, Loader2, Swords } from "lucide-react"
+import { Particle } from "./particle"
 
 const LOADING_STAGES = [
     { label: "Initializing Tambo AI Engine...", icon: Sparkles },
@@ -35,18 +36,8 @@ export function PreGameScreen({ onStart }: { onStart: (name: string) => void }) 
             {/* Background effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(12,80%,45%,0.05)_0%,transparent_60%)]" />
-                {Array.from({ length: 30 }).map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-0.5 h-0.5 rounded-full bg-orange-400/30"
-                        style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
-                        animate={{ opacity: [0, 0.6, 0], scale: [0, 1, 0] }}
-                        transition={{
-                            duration: 2 + Math.random() * 3,
-                            delay: Math.random() * 2,
-                            repeat: Infinity,
-                        }}
-                    />
+                {isReady && Array.from({ length: 30 }).map((_, i) => (
+                    <Particle key={i} />
                 ))}
             </div>
 
@@ -76,10 +67,10 @@ export function PreGameScreen({ onStart }: { onStart: (name: string) => void }) 
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3 }}
                             className={`flex items-center gap-2.5 px-3 py-1.5 rounded transition-colors ${isActive
-                                    ? "bg-orange-900/20 border border-orange-800/30"
-                                    : isDone
-                                        ? "opacity-50"
-                                        : ""
+                                ? "bg-orange-900/20 border border-orange-800/30"
+                                : isDone
+                                    ? "opacity-50"
+                                    : ""
                                 }`}
                         >
                             {isActive && !isReady ? (
@@ -89,10 +80,10 @@ export function PreGameScreen({ onStart }: { onStart: (name: string) => void }) 
                             )}
                             <span
                                 className={`text-xs ${isActive
-                                        ? isReady
-                                            ? "text-emerald-300"
-                                            : "text-orange-300"
-                                        : "text-muted-foreground"
+                                    ? isReady
+                                        ? "text-emerald-300"
+                                        : "text-orange-300"
+                                    : "text-muted-foreground"
                                     }`}
                             >
                                 {stage.label}

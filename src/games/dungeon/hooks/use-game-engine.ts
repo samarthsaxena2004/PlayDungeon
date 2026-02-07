@@ -109,6 +109,11 @@ function createInitialState(level: number = 1, initialGold: number = 0, theme: D
     theme,
     nextTheme: null,
     visualEffects: [],
+    runStats: {
+      enemiesDefeated: 0,
+      damageTaken: 0,
+      coinsEarned: 0 // Track gross income
+    }
   };
 }
 
@@ -139,6 +144,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newFireballs = [...state.fireballs];
       let newScore = state.score;
       let newCoins = state.coins;
+      let newStats = { ...state.runStats }; // Copy stats for mutation
       const currentTime = Date.now();
 
       // Update active effects
@@ -212,7 +218,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 // Random variance
                 coinDrop += Math.floor(Math.random() * coinDrop);
                 newCoins += coinDrop;
+                newStats.coinsEarned += coinDrop;
+                newStats.enemiesDefeated++;
                 state.profile = updateProfile(state.profile, { type: 'kill' });
+
+                // Combat Log: Enemy Defeated
+                state.storyLog.push({
+                  id: generateId(),
+                  text: `Defeated ${enemy.type}! +${coinDrop} gold.`,
+                  timestamp: Date.now(),
+                  type: 'combat'
+                });
+
                 hit = true;
                 break; // Enemy dead, stop checking fireballs
               }
@@ -274,7 +291,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             health: Math.max(0, newPlayer.health - dmg),
             lastDamageTime: currentTime
           };
+          newStats.damageTaken += dmg;
           enemy = { ...enemy, lastAttackTime: currentTime };
+
+          // Combat Log: Player Damaged
+          state.storyLog.push({
+            id: generateId(),
+            text: `Took ${dmg} damage from ${enemy.type}!`,
+            timestamp: Date.now(),
+            type: 'combat'
+          });
         }
 
         validEnemies.push({ ...enemy, isAggro: isAggro || enemy.isAggro });
@@ -329,6 +355,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         profile: state.profile,
         directorTrigger: combatStarted && !state.directorTrigger ? 'combat_start' : state.directorTrigger,
         visualEffects: activeVisualEffects,
+        runStats: newStats
       };
     }
 
@@ -458,6 +485,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               );
             } else {
               newMilestones[i] = { ...milestone, collected: false };
+              // Feedback for blocked exit
+              state.storyLog = [
+                ...state.storyLog,
+                {
+                  id: generateId(),
+                  text: "The portal is sealed! Defeat all enemies to proceed.",
+                  timestamp: Date.now(),
+                  type: 'danger' as const
+                }
+              ].slice(-50);
             }
           }
 
