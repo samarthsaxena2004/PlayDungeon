@@ -129,9 +129,9 @@ The AI Director (Tambo) operates on a parallel "Reasoning Loop" separate from th
 
 ## Future Roadmap
 
-*   **Multiplayer Party Mode**: Leveraging PartyKit to allow multiple players to explore the same AI-directed dungeon simultaneously.
-*   **Persistent World State**: Integration with vector databases to allow the AI Director to remember player actions across different sessions and campaigns.
-*   **Custom Persona Injection**: Allowing players to select different "Dungeon Master" personalities (e.g., "The Cruel Jester," "The Stoic Historian") to radically alter the gameplay tone.
+*   **Multiplayer Mode**: Experimenting with PartyKit so multiple players can share one AI-directed session instead of separate single-player worlds.
+*   **Memory Between Runs**: Integration with vector databases to allow the AI Director to remember player actions across different sessions and campaigns.
+*   **Custom Personalities**: Expose a simple system to plug in different Dungeon Master styles that reshape narration, difficulty, and rewards.
 
 ---
 
