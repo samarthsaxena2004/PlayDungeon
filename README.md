@@ -19,6 +19,11 @@ Traditional RPGs and roguelikes are bound by finite content constraints:
 ## The Solution
 Deep Dungeon replaces the static game master with an **Agentic AI Director**. The game state is continuously observed by Tambo, which hallucinates new content, modifies the game rules, and performs **Generative UI** updates to match the narrative context.
 
+<div align="center">
+  <img src="public/screenshots/usecases-preview.png" alt="Deep Dungeon Tambo Use Cases" width="800" />
+  <p><em>In-Game View: Tambo Use Cases</em></p>
+</div>
+
 ---
 
 ## Use Case: Generative UI
@@ -31,11 +36,6 @@ This is not a simple chat interface. Deep Dungeon utilizes Tambo's Generative UI
 <div align="center">
   <img src="public/screenshots/gameplay-preview.png" alt="Deep Dungeon Gameplay with AI Chat" width="800" />
   <p><em>In-Game View: Retro pixel art meets Agentic UI</em></p>
-</div>
-
-<div align="center">
-  <img src="public/screenshots/usecases-preview.png" alt="Deep Dungeon Tambo Use Cases" width="800" />
-  <p><em>In-Game View: Tambo Use Cases</em></p>
 </div>
 
 ## Use Case: Voice-Native Gameplay
