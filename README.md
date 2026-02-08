@@ -135,4 +135,4 @@ The AI Director (Tambo) operates on a parallel "Reasoning Loop" separate from th
 
 ---
 
-*Built for the WeMakeDevs x Tambo Hackathon by [Samarth Saxena](https://samarthsaxena.dev/).*
+*Built for the WeMakeDevs x Tambo Hackathon by Samarth Saxena.*
