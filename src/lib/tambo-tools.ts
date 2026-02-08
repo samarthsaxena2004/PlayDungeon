@@ -218,5 +218,5 @@ export const TAMBO_TOOLS = [
 
 export type ClientToolCall = {
     name: string;
-    arguments: any;
+    arguments: Record<string, unknown>;
 };

@@ -1,7 +1,7 @@
 'use client';
 
-import { useReducer, useCallback, useRef, useEffect } from 'react';
-import type { GameState, GameAction, Player, Fireball, Enemy, Controls, AIAction, StoryEntry } from '@/games/dungeon/lib/game-types';
+import { useReducer, useCallback, useRef } from 'react';
+import type { GameState, GameAction, Player, Fireball, Enemy, Controls, StoryEntry } from '@/games/dungeon/lib/game-types';
 import { generateDungeonMap, isWalkable } from '@/games/dungeon/lib/map-generator';
 import { INITIAL_PROFILE, updateProfile } from '@/lib/personality';
 
@@ -117,17 +117,7 @@ export function createInitialState(level: number = 1, initialGold: number = 0, t
   };
 }
 
-function checkCollision(
-  a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number }
-): boolean {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
-}
+
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
@@ -193,7 +183,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         // 1. Check Fireball Collisions
         // (Spatial optimization: only check if fireball count > 0)
         if (newFireballs.length > 0) {
-          let hit = false;
           for (let f = 0; f < newFireballs.length; f++) {
             const fb = newFireballs[f];
             // Simple AABB overlap
@@ -230,7 +219,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                   type: 'combat'
                 });
 
-                hit = true;
                 break; // Enemy dead, stop checking fireballs
               }
             }
@@ -355,7 +343,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Update quests
       const newQuests = state.currentQuests.map((quest) => {
         if (quest.id === 'defeat-enemies') {
-          const defeated = state.enemies.length - newEnemies.length + (quest.target - state.enemies.length);
+          // const defeated = state.enemies.length - newEnemies.length + (quest.target - state.enemies.length);
           return {
             ...quest,
             progress: quest.target - newEnemies.length,
@@ -382,6 +370,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        score: newScore,
         player: newPlayer,
         enemies: newEnemies,
         fireballs: newFireballs,
@@ -493,7 +482,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const newMilestones = [...state.milestones];
       let newQuests = [...state.currentQuests];
-      let newLevel = state.level;
       let shouldAdvanceLevel = false;
 
       for (let i = 0; i < newMilestones.length; i++) {
@@ -515,7 +503,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             // Check if all enemies defeated
             if (state.enemies.length === 0) {
               shouldAdvanceLevel = true;
-              newLevel = state.level + 1;
               newQuests = newQuests.map((q) =>
                 q.id === 'find-portal' ? { ...q, progress: 1, completed: true } : q
               );
@@ -541,7 +528,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (shouldAdvanceLevel) {
         // Generate new level with AI THEME
         const nextTheme = state.nextTheme || DEFAULT_THEME;
-        const newState = createInitialState(newLevel, state.coins, nextTheme);
+        const newState = createInitialState(state.level + 1, state.coins, nextTheme);
         return {
           ...newState,
           score: state.score + 1000,
@@ -617,7 +604,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       switch (tool) {
         case 'spawn_entity': {
-          const { type, position, personality } = args;
+          const { type, position } = args;
           // Use player position if no position provided, but offset
           const spawnX = position?.x ? position.x * TILE_SIZE : state.player.x + (Math.random() > 0.5 ? 200 : -200);
           const spawnY = position?.y ? position.y * TILE_SIZE : state.player.y + (Math.random() > 0.5 ? 200 : -200);
@@ -657,7 +644,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
 
         case 'spawn_custom_entity': {
-          const { name, description, stats } = args;
+          const { name, stats } = args;
           const spawnX = state.player.x + (Math.random() > 0.5 ? 200 : -200);
           const spawnY = state.player.y + (Math.random() > 0.5 ? 200 : -200);
 
@@ -746,7 +733,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
 
         case 'social_interaction': {
-          const { target, intent, success } = args;
+          const { success } = args;
 
           if (success) {
             newState.enemies = newState.enemies.map(e => ({
@@ -858,7 +845,7 @@ export function useGameEngine(initialLevel: number = 1, initialGold: number = 0)
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
 
-  const gameLoop = useCallback((timestamp: number) => {
+  const gameLoop = useCallback(function tick(timestamp: number) {
     if (lastTimeRef.current === 0) {
       lastTimeRef.current = timestamp;
     }
@@ -874,7 +861,7 @@ export function useGameEngine(initialLevel: number = 1, initialGold: number = 0)
 
     dispatch({ type: 'UPDATE_TICK', deltaTime });
 
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    animationFrameRef.current = requestAnimationFrame(tick);
   }, []);
 
   const startGame = useCallback(() => {
@@ -913,7 +900,7 @@ export function useGameEngine(initialLevel: number = 1, initialGold: number = 0)
     dispatch({ type: 'ADD_STORY', entry });
   }, []);
 
-  const applyAIAction = useCallback((tool: string, args: any) => {
+  const applyAIAction = useCallback((tool: string, args: Record<string, unknown>) => {
     dispatch({ type: 'APPLY_AI_ACTION', tool, args });
   }, []);
 

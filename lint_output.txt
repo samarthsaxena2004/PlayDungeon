@@ -2,3 +2,493 @@
 > playdungeon@0.1.0 lint
 > eslint
 
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/app/api/chat/route.ts
+  48:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/app/api/director/route.ts
+   5:45  warning  'triggerEvent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  51:21  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/app/api/story/route.ts
+  53:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/Ambient.tsx
+  87:6  warning  React Hook useEffect has missing dependencies: 'crossfade' and 'resolveTrack'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/Leaderboard.tsx
+  4:18  warning  'Medal' is defined but never used  @typescript-eslint/no-unused-vars
+  4:25  warning  'User' is defined but never used   @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx
+    4:18  warning  'AnimatePresence' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   20:19  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:20:19
+  18 |
+  19 | function FireParticle({ delay }: { delay: number }) {
+> 20 |   const randomX = Math.random() * 100
+     |                   ^^^^^^^^^^^^^ Cannot call impure function
+  21 |   const randomDuration = 3 + Math.random() * 4
+  22 |   const randomSize = 2 + Math.random() * 4
+  23 |   const hue = 12 + Math.random() * 30                                                                                                                                                                                                                                                                                                                  react-hooks/purity
+   21:30  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:21:30
+  19 | function FireParticle({ delay }: { delay: number }) {
+  20 |   const randomX = Math.random() * 100
+> 21 |   const randomDuration = 3 + Math.random() * 4
+     |                              ^^^^^^^^^^^^^ Cannot call impure function
+  22 |   const randomSize = 2 + Math.random() * 4
+  23 |   const hue = 12 + Math.random() * 30
+  24 |   const lightness = 40 + Math.random() * 30                                                                                                                                                                                                                                                           react-hooks/purity
+   22:26  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:22:26
+  20 |   const randomX = Math.random() * 100
+  21 |   const randomDuration = 3 + Math.random() * 4
+> 22 |   const randomSize = 2 + Math.random() * 4
+     |                          ^^^^^^^^^^^^^ Cannot call impure function
+  23 |   const hue = 12 + Math.random() * 30
+  24 |   const lightness = 40 + Math.random() * 30
+  25 |                                                                                                                                                                                                                                                                                                                     react-hooks/purity
+   23:20  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:23:20
+  21 |   const randomDuration = 3 + Math.random() * 4
+  22 |   const randomSize = 2 + Math.random() * 4
+> 23 |   const hue = 12 + Math.random() * 30
+     |                    ^^^^^^^^^^^^^ Cannot call impure function
+  24 |   const lightness = 40 + Math.random() * 30
+  25 |
+  26 |   return (                                                                                                                                                                                                                                                                                                                                                      react-hooks/purity
+   24:26  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:24:26
+  22 |   const randomSize = 2 + Math.random() * 4
+  23 |   const hue = 12 + Math.random() * 30
+> 24 |   const lightness = 40 + Math.random() * 30
+     |                          ^^^^^^^^^^^^^ Cannot call impure function
+  25 |
+  26 |   return (
+  27 |     <motion.div                                                                                                                                                                                                                                                                                                                                                                               react-hooks/purity
+   74:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:74:9
+  72 |         }, 25)
+  73 |       } else {
+> 74 |         setIsDeleting(false)
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  75 |         setCurrentIndex((prev) => (prev + 1) % VOICE_COMMANDS.length)
+  76 |       }
+  77 |     }  react-hooks/set-state-in-effect
+  141:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/hero-section.tsx:141:5
+  139 |
+  140 |   useEffect(() => {
+> 141 |     setMounted(true)
+      |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  142 |   }, [])
+  143 |
+  144 |   return (                                                                                   react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/ui/chart.tsx
+   72:7   warning  '_' is defined but never used             @typescript-eslint/no-unused-vars
+  108:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/ui/sidebar.tsx
+  663:26  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/ui/sidebar.tsx:663:26
+  661 |   // Random width between 50 to 90%.
+  662 |   const width = React.useMemo(() => {
+> 663 |     return `${Math.floor(Math.random() * 40) + 50}%`
+      |                          ^^^^^^^^^^^^^ Cannot call impure function
+  664 |   }, [])
+  665 |
+  666 |   return (  react-hooks/purity
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/landing/ui/use-toast.ts
+  18:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/ui/chart.tsx
+  129:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  266:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/ui/sidebar.tsx
+  611:26  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/ui/sidebar.tsx:611:26
+  609 |   // Random width between 50 to 90%.
+  610 |   const width = React.useMemo(() => {
+> 611 |     return `${Math.floor(Math.random() * 40) + 50}%`
+      |                          ^^^^^^^^^^^^^ Cannot call impure function
+  612 |   }, [])
+  613 |
+  614 |   return (  react-hooks/purity
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/components/ui/use-toast.ts
+  18:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/game/schema.ts
+  22:7  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/game/store.ts
+  31:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/Game.tsx
+   35:10  warning  'Play' is defined but never used                      @typescript-eslint/no-unused-vars
+   35:16  warning  'Info' is defined but never used                      @typescript-eslint/no-unused-vars
+   56:11  warning  'setActiveGame' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   76:10  warning  'showControls' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   76:24  warning  'setShowControls' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  140:42  warning  'count' is defined but never used                     @typescript-eslint/no-unused-vars
+  247:34  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  538:50  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/ai-chat-popup.tsx
+   4:8   warning  'SpeechRecognition' is defined but never used  @typescript-eslint/no-unused-vars
+  65:33  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/damage-overlay.tsx
+  21:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/damage-overlay.tsx:21:7
+  19 |   useEffect(() => {
+  20 |     if (lastDamageTime > 0) {
+> 21 |       setShowFlash(true);
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  22 |       const timer = setTimeout(() => setShowFlash(false), 300);
+  23 |       return () => clearTimeout(timer);
+  24 |     }  react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/game-renderer.tsx
+   78:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  123:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  207:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/narrative-overlay.tsx
+   5:74  warning  'Skull' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   5:81  warning  'Crown' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  69:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/narrative-overlay.tsx:69:9
+  67 |         const latest = storyLog[storyLog.length - 1];
+  68 |         // Avoid duplicates
+> 69 |         setQueue(prev => {
+     |         ^^^^^^^^ Avoid calling setState() directly within an effect
+  70 |             if (prev.find(e => e.id === latest.id) || currentEntry?.id === latest.id) return prev;
+  71 |             return [...prev, latest];
+  72 |         });  react-hooks/set-state-in-effect
+  79:13  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/narrative-overlay.tsx:79:13
+  77 |         if (!currentEntry && queue.length > 0 && !isPaused) {
+  78 |             const next = queue[0];
+> 79 |             setQueue(prev => prev.slice(1));
+     |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  80 |             setCurrentEntry(next);
+  81 |             onStoryShown?.();
+  82 |                                                react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/notification-bar.tsx
+  173:7  error  Error: Cannot access variable before it is declared
+
+`showNotification` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/notification-bar.tsx:173:7
+  171 |         a.priority > b.priority ? a : b
+  172 |       );
+> 173 |       showNotification(highestPriority);
+      |       ^^^^^^^^^^^^^^^^ `showNotification` accessed before it is declared
+  174 |     }
+  175 |   }, [gameState, onDangerAlert]);
+  176 |
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/notification-bar.tsx:193:3
+  191 |   }, []);
+  192 |
+> 193 |   const showNotification = (notification: Notification) => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 194 |     if (notificationTimeoutRef.current) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 195 |       clearTimeout(notificationTimeoutRef.current);
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 202 |     }, 3000);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 203 |   };
+      | ^^^^^ `showNotification` is declared here
+  204 |
+  205 |   const config = currentNotification ? typeConfig[currentNotification.type] : null;
+  206 |   const Icon = config?.icon;  react-hooks/immutability
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/particle.tsx
+  8:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/particle.tsx:8:9
+   6 |
+   7 |     useEffect(() => {
+>  8 |         setStyle({
+     |         ^^^^^^^^ Avoid calling setState() directly within an effect
+   9 |             left: `${Math.random() * 100}%`,
+  10 |             top: `${Math.random() * 100}%`,
+  11 |             duration: 2 + Math.random() * 3,  react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/pre-game-screen.tsx
+  24:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/pre-game-screen.tsx:24:13
+  22 |     useEffect(() => {
+  23 |         if (currentStage >= LOADING_STAGES.length - 1) {
+> 24 |             setIsReady(true)
+     |             ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |             return
+  26 |         }
+  27 |         const timer = setTimeout(  react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/store-modal.tsx
+    5:52   warning  'Shield' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:15   warning  'ShopkeeperData' is defined but never used                       @typescript-eslint/no-unused-vars
+   60:12   warning  'activeTab' is assigned a value but never used                   @typescript-eslint/no-unused-vars
+   60:23   warning  'setActiveTab' is assigned a value but never used                @typescript-eslint/no-unused-vars
+   86:78   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+   86:102  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  145:25   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  145:63   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  145:89   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/story-popup.tsx
+  64:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/story-popup.tsx:64:7
+  62 |
+  63 |     if (latestEntry && latestEntry.id !== lastShownId) {
+> 64 |       setVisibleStory(latestEntry);
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  65 |       setLastShownId(latestEntry.id);
+  66 |       onStoryShown?.();
+  67 |  react-hooks/set-state-in-effect
+  84:9  warning  'textDuration' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/tambo-game-chat.tsx
+    6:3   warning  'MessageCircle' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   45:33  warning  'gameContext' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   45:46  warning  'onGameAction' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   52:9   warning  The 'messages' logical expression could make the dependencies of useEffect Hook (at line 115) change on every render. To fix this, wrap the initialization of 'messages' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+   62:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/tambo-game-chat.tsx:62:7
+  60 |     // Sync local thinking state with SDK streaming
+  61 |     if (streaming) {
+> 62 |       setIsThinking(true);
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  63 |       // Clear any existing timeout
+  64 |       if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+  65 |  react-hooks/set-state-in-effect
+  388:54  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  388:59  warning  'i' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/components/voice-control.tsx
+    5:63   warning  'ChevronUp' is defined but never used                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  181:6    warning  React Hook useCallback has a missing dependency: 'onComplexCommand'. Either include it or remove the dependency array. If 'onComplexCommand' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  331:67   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  331:84   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  452:70   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  452:75   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  452:78   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  452:82   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:39   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:58   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:63   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:85   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:90   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+  453:107  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                    react/no-unescaped-entities
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-game-engine.ts
+    3:43  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    4:73  warning  'AIAction' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  120:10  warning  'checkCollision' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  214:17  warning  'newScore' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  233:17  warning  'hit' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  358:17  warning  'defeated' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  620:35  warning  'personality' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  660:25  warning  'description' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  749:19  warning  'target' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  749:27  warning  'intent' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  877:55  error    Error: Cannot access variable before it is declared
+
+`gameLoop` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-game-engine.ts:877:55
+  875 |     dispatch({ type: 'UPDATE_TICK', deltaTime });
+  876 |
+> 877 |     animationFrameRef.current = requestAnimationFrame(gameLoop);
+      |                                                       ^^^^^^^^ `gameLoop` accessed before it is declared
+  878 |   }, []);
+  879 |
+  880 |   const startGame = useCallback(() => {
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-game-engine.ts:861:3
+  859 |   const lastTimeRef = useRef<number>(0);
+  860 |
+> 861 |   const gameLoop = useCallback((timestamp: number) => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 862 |     if (lastTimeRef.current === 0) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 863 |       lastTimeRef.current = timestamp;
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 877 |     animationFrameRef.current = requestAnimationFrame(gameLoop);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 878 |   }, []);
+      | ^^^^^^^^^^ `gameLoop` is declared here
+  879 |
+  880 |   const startGame = useCallback(() => {
+  881 |     if (animationFrameRef.current) {  react-hooks/immutability
+  916:58  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-game-sounds.ts
+  210:17  warning  The ref value 'audioRefs.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'audioRefs.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-shopkeeper.ts
+  4:15  warning  'StoreItem' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-toast.ts
+  18:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-voice-commands.ts
+  141:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-voice-commands.ts:141:7
+  139 |   useEffect(() => {
+  140 |     if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+> 141 |       setIsSupported(true);
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  142 |     }
+  143 |   }, []);
+  144 |  react-hooks/set-state-in-effect
+  147:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/hooks/use-voice-commands.ts:147:7
+  145 |   useEffect(() => {
+  146 |     if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+> 147 |       setIsSupported(true);
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  148 |     }
+  149 |   }, []);
+  150 |  react-hooks/set-state-in-effect
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/lib/game-types.ts
+  155:9   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/lib/map-generator.ts
+  4:63  warning  'style' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/games/dungeon/lib/tambo-components.tsx
+  8:110  warning  'ArrowLeft' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/hooks/use-toast.ts
+  18:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/lib/tambo-client.ts
+    1:10  warning  'TAMBO_TOOLS' is defined but never used     @typescript-eslint/no-unused-vars
+   15:13  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   21:16  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   25:35  warning  'requestedModel' is defined but never used  @typescript-eslint/no-unused-vars
+   97:29  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   99:33  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  125:26  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  153:76  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  164:30  warning  'e' is defined but never used               @typescript-eslint/no-unused-vars
+
+/Users/samarthsaxena/Desktop/PlayDungeon/src/lib/tambo-tools.ts
+  221:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 113 problems (65 errors, 48 warnings)
+

@@ -1,4 +1,4 @@
-import { TAMBO_TOOLS } from "./tambo-tools";
+// TAMBO_TOOLS removed as it was unused
 
 const TAMBO_BASE_URL = "https://api.tambo.co";
 
@@ -12,13 +12,13 @@ interface TamboRequestOptions {
     model?: string;
     max_tokens?: number;
     temperature?: number;
-    tools?: any[];
+    tools?: unknown[];
     tool_choice?: "auto" | "none" | "required";
 }
 
 export interface TamboResponse {
     content: string;
-    toolCalls: any[];
+    toolCalls: unknown[];
     role: string;
 }
 
@@ -94,9 +94,9 @@ export async function generateWithTambo(
 
         // Add tool definitions if present
         if (options.tools && options.tools.length > 0) {
-            (requestBody as any).tools = options.tools;
+            (requestBody as Record<string, unknown>).tools = options.tools;
             if (options.tool_choice) {
-                (requestBody as any).tool_choice = options.tool_choice;
+                (requestBody as Record<string, unknown>).tool_choice = options.tool_choice;
             }
         }
 
@@ -122,7 +122,7 @@ export async function generateWithTambo(
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let assistantContent = "";
-        const toolCalls: any[] = [];
+        const toolCalls: unknown[] = [];
         let buffer = "";
 
         while (true) {
@@ -150,7 +150,7 @@ export async function generateWithTambo(
                             // Handle content
                             if (msg.content) {
                                 if (Array.isArray(msg.content)) {
-                                    assistantContent = msg.content.map((c: any) => c.text || "").join("");
+                                    assistantContent = msg.content.map((c: { text: string }) => c.text || "").join("");
                                 } else if (typeof msg.content === 'string') {
                                     assistantContent = msg.content;
                                 }

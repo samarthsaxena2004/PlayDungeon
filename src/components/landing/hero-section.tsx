@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
@@ -17,11 +17,13 @@ const VOICE_COMMANDS = [
 ]
 
 function FireParticle({ delay }: { delay: number }) {
-  const randomX = Math.random() * 100
-  const randomDuration = 3 + Math.random() * 4
-  const randomSize = 2 + Math.random() * 4
-  const hue = 12 + Math.random() * 30
-  const lightness = 40 + Math.random() * 30
+  const { randomX, randomDuration, randomSize, hue, lightness } = useMemo(() => ({
+    randomX: Math.random() * 100,
+    randomDuration: 3 + Math.random() * 4,
+    randomSize: 2 + Math.random() * 4,
+    hue: 12 + Math.random() * 30,
+    lightness: 40 + Math.random() * 30,
+  }), [])
 
   return (
     <motion.div
