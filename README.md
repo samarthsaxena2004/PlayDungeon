@@ -33,6 +33,11 @@ This is not a simple chat interface. Deep Dungeon utilizes Tambo's Generative UI
   <p><em>In-Game View: Retro pixel art meets Agentic UI</em></p>
 </div>
 
+<div align="center">
+  <img src="public/screenshots/usecases-preview.png" alt="Deep Dungeon Tambo Use Cases" width="800" />
+  <p><em>In-Game View: Tambo Use Cases</em></p>
+</div>
+
 ## Use Case: Voice-Native Gameplay
 The game is architected for natural language as a primary input method. Players do not just press buttons; they speak to the world.
 *   **Intent Recognition**: Natural language commands like "I want to sneak past the guard and steal his key" are parsed into specific game logic (Stealth Check + Loot Action) combined with Narrative Flavor.
