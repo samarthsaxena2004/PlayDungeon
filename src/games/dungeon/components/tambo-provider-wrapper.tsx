@@ -57,6 +57,14 @@ export function TamboProviderWrapper({
   useEffect(() => {
     if (!apiKey) {
       console.warn('⚠️ valid NEXT_PUBLIC_TAMBO_API_KEY not found. Chat features may not work correctly.');
+      // Create a visible toast/alert for production debugging
+      if (typeof window !== 'undefined') {
+        const warningDiv = document.createElement('div');
+        warningDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff0000;color:white;text-align:center;padding:10px;z-index:9999;font-family:monospace;font-weight:bold;';
+        warningDiv.innerText = 'CRITICAL: NEXT_PUBLIC_TAMBO_API_KEY MISSING. CHAT & AI WILL FAIL.';
+        document.body.appendChild(warningDiv);
+        setTimeout(() => warningDiv.remove(), 10000);
+      }
     }
   }, [apiKey]);
 

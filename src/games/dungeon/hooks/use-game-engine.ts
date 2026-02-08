@@ -245,10 +245,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!enemy.isAggro && isAggro) combatStarted = true;
 
         // Flee or Chase
-        const isFleeing = enemy.morale < 30 && enemy.health < enemy.maxHealth * 0.3;
+        const isFleeing = (enemy.morale < 30 && enemy.health < enemy.maxHealth * 0.3) || enemy.aiState === 'fleeing';
+        const isDefensive = enemy.aiState === 'defensive';
+        const isFlanking = enemy.aiState === 'flanking';
+
         let moveX = 0, moveY = 0;
 
         if (isFleeing) {
+          // FLEE: Run away from player
           const dx = enemy.x - newPlayer.x;
           const dy = enemy.y - newPlayer.y;
           const len = Math.sqrt(dx * dx + dy * dy);
@@ -257,10 +261,42 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             moveY = (dy / len) * enemy.speed * 1.5 * deltaTime * 0.06;
           }
           // Morale recovery
-          if (dist > AGGRO_RANGE * 1.5 && Math.random() < 0.01) {
-            enemy = { ...enemy, morale: 50, isAggro: false };
+          if (dist > AGGRO_RANGE * 1.5 && Math.random() < 0.01 && enemy.morale < 30) {
+            enemy = { ...enemy, morale: 50, isAggro: false, aiState: 'aggressive' }; // Reset to aggressive on recovery
+          }
+        } else if (isDefensive && isAggro) {
+          // DEFENSIVE: Maintain optimal range (150px)
+          const dx = newPlayer.x - enemy.x;
+          const dy = newPlayer.y - enemy.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+
+          if (len < 100) {
+            // Too close, back up
+            moveX = -(dx / len) * enemy.speed * deltaTime * 0.06;
+            moveY = -(dy / len) * enemy.speed * deltaTime * 0.06;
+          } else if (len > 200) {
+            // Too far, approach slowly
+            moveX = (dx / len) * enemy.speed * 0.5 * deltaTime * 0.06;
+            moveY = (dy / len) * enemy.speed * 0.5 * deltaTime * 0.06;
+          }
+          // Else, hold ground
+        } else if (isFlanking && isAggro) {
+          // FLANKING: Move perpendicular to player
+          const dx = newPlayer.x - enemy.x;
+          const dy = newPlayer.y - enemy.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+
+          if (len > 0) {
+            // Circle strafe: (-dy, dx) is perpendicular
+            // Combine with slight approach to verify target
+            const approachWeight = len > 100 ? 0.3 : -0.1;
+            const flankWeight = 0.9;
+
+            moveX = ((dx * approachWeight) - (dy * flankWeight)) / len * enemy.speed * deltaTime * 0.06;
+            moveY = ((dy * approachWeight) + (dx * flankWeight)) / len * enemy.speed * deltaTime * 0.06;
           }
         } else if (isAggro) {
+          // AGGRESSIVE: Direct chase
           const dx = newPlayer.x - enemy.x;
           const dy = newPlayer.y - enemy.y;
           const len = Math.sqrt(dx * dx + dy * dy);
@@ -617,6 +653,60 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             startTime: Date.now(),
             scale: 1
           }];
+          break;
+        }
+
+        case 'spawn_custom_entity': {
+          const { name, description, stats } = args;
+          const spawnX = state.player.x + (Math.random() > 0.5 ? 200 : -200);
+          const spawnY = state.player.y + (Math.random() > 0.5 ? 200 : -200);
+
+          const newEnemy: Enemy = {
+            id: generateId(),
+            type: 'custom', // Generic type for renderer, logic handles visualEmoji
+            visualEmoji: name.toLowerCase().includes('dragon') ? '🐉' : name.toLowerCase().includes('ghost') ? '👻' : '👾',
+            x: spawnX,
+            y: spawnY,
+            width: TILE_SIZE * (stats.health > 100 ? 1.5 : 1), // Bigger if tanky
+            height: TILE_SIZE * (stats.health > 100 ? 1.5 : 1),
+            health: stats.health || 50,
+            maxHealth: stats.health || 50,
+            speed: PLAYER_SPEED * (stats.speed || 0.5),
+            damage: stats.damage || 10,
+            morale: 100,
+            attackCooldown: 1000,
+            lastAttackTime: 0,
+            isAggro: true,
+            direction: 'down',
+            aiState: 'aggressive'
+          };
+
+          newState.enemies = [...newState.enemies, newEnemy];
+          logText = `Director: Manifested "${name}"!`;
+
+          newState.visualEffects = [...newState.visualEffects, {
+            id: generateId(),
+            x: spawnX,
+            y: spawnY,
+            type: 'spawn_rift',
+            duration: 2000,
+            startTime: Date.now(),
+            scale: 1.5
+          }];
+          break;
+        }
+
+        case 'combat_decision': {
+          const { enemyId, tactic } = args;
+          // 'aggressive' | 'defensive' | 'flank' | 'flee' | 'cast_spell'
+          // Map to AIState
+          let aiState: 'aggressive' | 'defensive' | 'fleeing' | 'flanking' = 'aggressive';
+          if (tactic === 'defensive') aiState = 'defensive';
+          if (tactic === 'flank') aiState = 'flanking';
+          if (tactic === 'flee') aiState = 'fleeing';
+
+          newState.enemies = newState.enemies.map(e => e.id === enemyId || enemyId === 'all' ? { ...e, aiState } : e);
+          logText = `Director Command: Enemies switching to ${tactic} tactics!`;
           break;
         }
 

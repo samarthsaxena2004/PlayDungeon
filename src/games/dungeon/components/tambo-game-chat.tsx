@@ -53,6 +53,7 @@ export function TamboGameChat({ gameContext, onGameAction, onCommand, isOpen, on
 
   // Local state to track "thinking" if streaming hangs, or to provide immediate feedback
   const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -243,11 +244,13 @@ export function TamboGameChat({ gameContext, onGameAction, onCommand, isOpen, on
 
     try {
       setIsThinking(true); // Immediate feedback
+      setError(null);
       await sendThreadMessage(input.trim());
       setInput('');
       setShowQuickPrompts(false);
     } catch (error) {
       console.error('Failed to send message:', error);
+      setError('Connection failed. Please check your internet or API key.');
       setIsThinking(false);
     }
   };
@@ -414,6 +417,13 @@ export function TamboGameChat({ gameContext, onGameAction, onCommand, isOpen, on
               </div>
             )}
 
+            {error && (
+              <div className="flex justify-center my-2">
+                <span className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded">
+                  {error}
+                </span>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

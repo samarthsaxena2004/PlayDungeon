@@ -44,6 +44,7 @@ export interface Enemy extends Entity {
   lastAttackTime: number;
   attackCooldown: number;
   direction?: 'up' | 'down' | 'left' | 'right';
+  aiState?: 'aggressive' | 'defensive' | 'fleeing' | 'flanking'; // New AI tactic state
 }
 
 export interface Fireball extends Entity, Velocity {
