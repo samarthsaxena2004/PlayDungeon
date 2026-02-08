@@ -23,10 +23,13 @@ export interface TamboResponse {
 }
 
 function getConfigurationForModel(requestedModel: string): TamboConfig {
-    const primaryKey = process.env.TAMBO_API_KEY!;
-    const primaryProject = process.env.TAMBO_PROJECT_ID!;
+    const primaryKey = process.env.TAMBO_API_KEY || process.env.NEXT_PUBLIC_TAMBO_API_KEY!;
+    const primaryProject = process.env.TAMBO_PROJECT_ID || process.env.NEXT_PUBLIC_TAMBO_PROJECT_ID!;
 
     // Config Map - STRICTLY TAMBO
+    // Debug log
+    if (!primaryKey) console.error("❌ Tambo Client: Missing API KEY");
+
     return {
         key: primaryKey,
         projectId: primaryProject,
