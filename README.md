@@ -1,6 +1,12 @@
+<div align="center">
+
 # Deep Dungeon
 
 **An AI-Native Roguelike Powered by Tambo Agentic Intelligence**
+
+[Play Demo](https://play-dungeon.samarthsaxena.dev/)
+
+</div>
 
 Deep Dungeon represents a paradigm shift in game development, moving beyond static scripts to a fully dynamic, agentic game loop. By integrating **Tambo** directly into the core engine, The game features a Dungeon Master that doesn't just respond to commands but actively innovates—generating levels, crafting narratives, and improvising gameplay mechanics in real-time.
 
