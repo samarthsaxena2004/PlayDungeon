@@ -1,5 +1,0 @@
-{
-    "name": "playdungeon",
-    "main": "party/server.ts",
-    "compatibilityDate": "2025-02-06"
-}

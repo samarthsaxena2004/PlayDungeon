@@ -144,7 +144,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       let newFireballs = [...state.fireballs];
       let newScore = state.score;
       let newCoins = state.coins;
-      let newStats = { ...state.runStats }; // Copy stats for mutation
+      const newStats = { ...state.runStats }; // Copy stats for mutation
       const currentTime = Date.now();
 
       // Update active effects
@@ -586,7 +586,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.coins < action.item.cost) return state; // Should be handled by UI too
 
       const { item } = action;
-      let newPlayer = { ...state.player };
+      const newPlayer = { ...state.player };
 
       if (item.type === 'heal') {
         newPlayer.health = Math.min(newPlayer.maxHealth, newPlayer.health + item.value);
@@ -612,7 +612,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'APPLY_AI_ACTION': {
       const { tool, args } = action;
-      let newState = { ...state };
+      const newState = { ...state };
       let logText = "";
 
       switch (tool) {

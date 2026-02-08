@@ -149,7 +149,7 @@ export function generateDungeonMap(
   const enemies: Enemy[] = [];
 
   // Define available enemy types based on level
-  let availableTypes: Enemy['type'][] = ['slime'];
+  const availableTypes: Enemy['type'][] = ['slime'];
   if (level >= 2) availableTypes.push('skeleton');
   if (level >= 4) availableTypes.push('ghost');
 
