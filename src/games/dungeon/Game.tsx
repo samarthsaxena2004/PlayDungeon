@@ -615,7 +615,7 @@ export default function GamePage() {
             />
 
             <DamageOverlay
-              key={`damage-overlay-${gameInstanceId}`}
+              key={`damage-overlay-${gameInstanceId}-${state.level}`}
               health={state.player.health}
               maxHealth={state.player.maxHealth}
               lastDamageTime={state.player.lastDamageTime}

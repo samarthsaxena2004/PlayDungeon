@@ -21,7 +21,7 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function createInitialState(level: number = 1, initialGold: number = 0, theme: DungeonTheme = DEFAULT_THEME): GameState {
+export function createInitialState(level: number = 1, initialGold: number = 0, theme: DungeonTheme = DEFAULT_THEME): GameState {
   const { map, spawnPoint, enemies, milestones } = generateDungeonMap(
     MAP_WIDTH,
     MAP_HEIGHT,
@@ -133,7 +133,7 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }): num
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
-function gameReducer(state: GameState, action: GameAction): GameState {
+export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'UPDATE_TICK': {
       if (state.gameStatus !== 'playing') return state;
