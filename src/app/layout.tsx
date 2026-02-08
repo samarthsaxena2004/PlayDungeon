@@ -38,9 +38,9 @@ export const metadata: Metadata = {
     siteName: "Deep Dungeon",
     images: [
       {
-        url: "/icon.png",
-        width: 800,
-        height: 600,
+        url: "/screenshots/landing-preview.png",
+        width: 2880,
+        height: 1800,
         alt: "Deep Dungeon Gameplay",
       },
     ],
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deep Dungeon - Powered by Tambo.co Voice AI",
     description: "Built for the Tambo.co Hackathon. Control your destiny with voice commands in this adaptive AI roguelite.",
-    images: ["/icon.png"],
+    images: ["/screenshots/landing-preview.png"],
   },
   icons: {
     icon: "/icon.png",
