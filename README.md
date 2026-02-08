@@ -2,7 +2,7 @@
 
 # Deep Dungeon
 
-**An AI-Native Roguelike Powered by Tambo Agentic Intelligence**
+## **An AI-Native Roguelike Powered by Tambo Agentic Intelligence**
 
 [Play Demo](https://play-dungeon.samarthsaxena.dev/)
 
