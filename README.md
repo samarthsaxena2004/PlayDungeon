@@ -4,7 +4,7 @@
 
 ## **An AI-Native Roguelike Powered by Tambo Agentic Intelligence**
 
-[Play Demo](https://play-dungeon.samarthsaxena.dev/)
+[Play Demo](https://www.youtube.com/watch?v=cy4eflbH-_M)
 
 </div>
 
