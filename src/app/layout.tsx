@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Press_Start_2P, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import { Analytics } from "@vercel/analytics/next";
 
 const pressStart = Press_Start_2P({
   weight: "400",
@@ -77,6 +78,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${pressStart.variable} ${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
